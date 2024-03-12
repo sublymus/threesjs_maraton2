@@ -21,8 +21,7 @@ export default class extends BaseSchema {
       table.uuid('collaborator_id').notNullable()
       
       table.uuid('engineer_id')
-      table.string('loader_url')
-      table.string('scene_url')
+      table.string('scene_dir')
 
       table.timestamp('created_at')
       table.timestamp('updated_at')

@@ -5,8 +5,6 @@ import { v4 } from 'uuid'
 enum PRODUCT_STATUS{
   PAUSE,VISIBLE,DELETED,
 } 
-console.log({e:PRODUCT_STATUS['0']});
-
 
 export default class Product extends BaseModel {
   
@@ -37,7 +35,7 @@ export default class Product extends BaseModel {
   declare stock: number  
   
   @column()
-  declare category: string  
+  declare category_id: string  
   
   @column()
   declare price: number
@@ -55,10 +53,7 @@ export default class Product extends BaseModel {
   declare engineer_id?: string  
   
   @column()
-  declare loader_url?: string  
-
-  @column()
-  declare scene_url?: string
+  declare scene_dir?: string  
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
