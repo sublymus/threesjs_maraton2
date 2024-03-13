@@ -21,6 +21,6 @@ export async function unZipDir({
   const dirUrl = `${env.get('FILE_STORAGE')}/${dirName}`;
   const zip = new AdmZip(file?.tmpPath);
   zip.extractAllTo(dirUrl, /** overwrite **/ true)
-  return dirUrl;
+  return dirName;
 
 }

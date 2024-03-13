@@ -5,6 +5,8 @@ import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
 import { unZipDir } from './Tools/ZipManager/unZipDir.js';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
+import { paginate } from './Tools/Utils.js';
+import db from '@adonisjs/lucid/services/db';
 
 export default class ProductsController {
     async create_product({ request }: HttpContext) {
@@ -58,7 +60,7 @@ export default class ProductsController {
             // action:`{${new Date().toISOString()},name:'creation','message'}`
         })
         product.id = product_id;
-        return product
+        return product.$attributes
     }
     /*
     UserAction{
@@ -120,7 +122,7 @@ export default class ProductsController {
             product[filesAttribute] = JSON.stringify(urls);
         }
         await product.save();
-        return product;
+        return product.$attributes;
     }
 
 
@@ -134,32 +136,86 @@ export default class ProductsController {
         // if (product.account_id !== access.auth_table_id) {
         //   return "ERROR Permission denied";
         // }
+        const file  = request.file('scene_dir');
+        if(!file) return "scene_dir file not found";
+        
         let url = await unZipDir({
-            file: request.file('scene_dir'),
+            file: file,
             table_name: "products",
             table_id: product.id,
             column_name: "scene_dir",
         });
         product.scene_dir = url;
         product.save();
-        return product; 
+        return product.$attributes; 
     }
     async get_product({ request }: HttpContext) {
         const id: string = request.param('id');
         const product = await Product.find(id);
-        return product;
+        if (!product) return "ERROR Product not found";
+        
+        return product.$attributes;
     }
 
     async detail_product({ request }: HttpContext) {
         const id: string = request.param('id');
         const product = await Product.find(id);
-        return product;
+        if (!product) return "ERROR Product not found";
+        return product.$attributes;
     }
 
-    async get_products({ request }: HttpContext) {
-        const qs = request.qs();
-
-        return qs;
+    async get_products({ request }: HttpContext) {                               // price_desc price_asc date_desc date_asc
+        const {page , limit , category_id , catalog_id , features , price_min , price_max , text , order_by , stock_min , stock_max} = paginate(request.qs() as  {page:number|undefined,limit:number|undefined}&{[k:string]:any});
+        let query = db.query().from(Product.table).select('*');
+        if(category_id){
+            query = query.where('category_id',category_id);
+        }
+        if(catalog_id){
+            query = query.whereIn('category_id',(s)=>{
+                 s.from('categories').select('id').where('catalog_id',catalog_id);
+            });
+        }
+        if(text){
+            const like = `%${(text as string).split('').join('%')}%`;
+            query = query.andWhere((q)=>{
+                q.whereLike('title',like).orWhereLike('description',like);
+            });
+        }
+        if(price_max||price_min){
+            query = query.andWhere((q)=>{
+                q.whereBetween('price',[price_min||0,price_max||Number.MAX_VALUE])
+            });
+        }
+        if(stock_max||stock_min){
+            query = query.andWhere((q)=>{
+                q.whereBetween('stock',[stock_min||0,stock_max||Number.MAX_VALUE]);
+            });
+        }
+        query = query.limit(limit).offset((page - 1) * limit);
+        if (order_by) {
+            switch (order_by) {
+              case "date_asc":
+                query = query.orderBy("products.created_at", "asc");
+                break;
+      
+              case "date_desc":
+                query = query.orderBy("products.created_at", "desc");
+                break;
+      
+              case "price_asc":
+                query = query.orderBy("price", "asc");
+                break;
+      
+              case "price_desc":
+                query = query.orderBy("price", "desc");
+                break;
+      
+              default:
+                query = query.orderBy("products.created_at", "desc");
+                break;
+            }
+          }
+        return await query
     }
 
     async detail_products({ request }: HttpContext) {
@@ -179,4 +235,4 @@ export default class ProductsController {
           isDeleted:true,
         };
     }
-}
+  }

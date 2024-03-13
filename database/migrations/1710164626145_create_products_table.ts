@@ -14,7 +14,7 @@ export default class extends BaseSchema {
       table.string('model_images').notNullable()
       table.string('status').notNullable()
       table.integer('stock').notNullable()
-      table.uuid('category_id').notNullable()
+      table.uuid('category_id').notNullable().references('id').inTable('categories');
       table.integer('price'); // require if is_dynamic_price
       table.boolean('is_dynamic_price')
       table.uuid('store_id').notNullable()
