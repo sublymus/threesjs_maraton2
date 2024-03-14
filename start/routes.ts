@@ -5,6 +5,8 @@ import router from '@adonisjs/core/services/router'
 import env from './env.js';
 import CatalogsController from '#controllers/catalogs_controller';
 import CategoriesController from '#controllers/categories_controller';
+import FeaturesController from '#controllers/features_controller';
+import FValueController from '#controllers/f_values_controller';
 
 // router.get('/', [UsersController,'connexion']);
 
@@ -39,6 +41,17 @@ router.put('/update_category', [CategoriesController,'update_category']);
 router.put('/update_view_category', [CategoriesController,'update_view_category']);
 router.delete('/delete_category/:id', [CategoriesController,'delete_category']);
 
+router.post('/create_feature', [FeaturesController,'create_feature']);
+router.get('/get_feature/:id', [FeaturesController,'get_feature']);
+router.get('/get_features', [FeaturesController,'get_features']);
+router.put('/update_feature', [FeaturesController,'update_feature']);
+router.delete('/delete_feature/:id', [FeaturesController,'delete_feature']);
+
+router.post('/create_f_value', [FValueController,'create_f_value']);
+router.get('/get_f_value/:id', [FValueController,'get_f_value']);
+router.get('/get_f_values', [FValueController,'get_f_values']);
+router.put('/update_f_value', [FValueController,'update_f_value']);
+router.delete('/delete_f_value/:id', [FValueController,'delete_f_value']);
 
 router.get('/fs/:fileName',({params,response})=>{
     response.download(`${env.get("FILE_STORAGE")}/${params.fileName}`)

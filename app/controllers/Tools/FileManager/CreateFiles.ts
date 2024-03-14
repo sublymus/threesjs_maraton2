@@ -102,37 +102,37 @@ export function moveFile({
   count: number;
 }) {
   if (!file) return Promise.reject(null);
+
   return new Promise(async (rev, rej) => {
-
-    //  console.log({state});
-
-    // if()
-
     try {
-      const fileName = `${Date.now().toString(32)}_${Math.round(
+      let fileName = ''
+      let stat: sharp.Metadata | undefined;
+      fileName = `${Date.now().toString(32)}_${Math.round(
         Math.random() * 10e6
       ).toString(36)}${count}_${table_name}_${column_name}_${table_id}.webp`;
-      const stat = await sharp(file.tmpPath).metadata();
-      
-      let sharpOBJ = sharp(file.tmpPath);
 
+      let sharpOBJ = sharp(file.tmpPath);
       if (compress && compress == 'img') {
+        stat = await sharp(file.tmpPath).metadata();
         let iw = 0;
         let ih = 0;
         let a = 1;
         const c = 1280;
         let requiredResize = false;
-        if (stat.height && stat.width) {
-          requiredResize = (stat.width > 1920 || stat.height > 1920)
-          a = stat.width / stat.height
-          if (a > 1) {
-            iw = c;
-            ih = c / a;
-          } else {
-            ih = c;
-            iw = a * c
+        if (stat) {
+          if (stat.height && stat.width) {
+            requiredResize = (stat.width > 1920 || stat.height > 1920)
+            a = stat.width / stat.height
+            if (a > 1) {
+              iw = c;
+              ih = c / a;
+            } else {
+              ih = c;
+              iw = a * c
+            }
           }
         }
+
         iw = Math.trunc(iw);
         ih = Math.trunc(ih);
         if (requiredResize) {
@@ -144,17 +144,19 @@ export function moveFile({
         sharpOBJ = sharpOBJ.webp({ quality: 90 })
       }
 
-        // .composite([
-        //   {
-        //     input: "./logo_joumiadeals2.png",
-        //     top: ih - lh,
-        //     left: iw - lw,
-        //   },
-        // ])
-        sharpOBJ.toFile(`${env.get("FILE_STORAGE")}/${fileName}`, () => {
-          rev(fileName)
-        });
-      
+      // .composite([
+      //   {
+      //     input: "./logo_joumiadeals2.png",
+      //     top: ih - lh,
+      //     left: iw - lw,
+      //   },
+      // ])
+      sharpOBJ.toFile(`${env.get("FILE_STORAGE")}/${fileName}`, () => {
+        rev(fileName)
+      });
+
+
+
     } catch (error) {
       rej(null);
     }

@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
+import { v4 } from 'uuid'
 
 export default class Category extends BaseModel {
   @column({ isPrimary: true })
@@ -31,4 +32,9 @@ export default class Category extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @beforeSave()
+  public static async setUUID (category: Category) {
+   if(!category.id)category.id = v4()
+  }
 }

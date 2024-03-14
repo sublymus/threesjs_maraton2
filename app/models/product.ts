@@ -8,6 +8,8 @@ enum PRODUCT_STATUS{
 
 export default class Product extends BaseModel {
   
+  
+
   public static STATUS  = PRODUCT_STATUS;
 
   @column({ isPrimary: true })
