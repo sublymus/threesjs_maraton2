@@ -96,8 +96,11 @@ export default class FValueController {
     }
 
     async get_f_values({ request }: HttpContext) {
-        const {page , limit} = paginate(request.qs() as  {page:number|undefined,limit:number|undefined,catalog_id:string}&{[k:string]:any});
-        let query = db.query().from(FValue.table).select('*')
+        const {page , limit , feature_id} = paginate(request.qs() as  {page:number|undefined,limit:number|undefined,catalog_id:string}&{[k:string]:any});
+        let query = db.query().from(FValue.table).select('*');
+        if(feature_id){
+            query = query.where('feature_id',feature_id);
+        }
         query =query.limit(limit).offset((page - 1) * limit);
         return await query
     }

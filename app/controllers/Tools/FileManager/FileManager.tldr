@@ -66,9 +66,9 @@
 		{
 			"id": "pointer:pointer",
 			"typeName": "pointer",
-			"x": -143.75441360473633,
-			"y": 415.48045539855957,
-			"lastActivityTimestamp": 1710228726076,
+			"x": 636.9586899175339,
+			"y": 173.36038080799972,
+			"lastActivityTimestamp": 1710660904911,
 			"meta": {}
 		},
 		{
@@ -79,9 +79,9 @@
 			"typeName": "page"
 		},
 		{
-			"x": 968.7544136047363,
-			"y": 159.51954460144043,
-			"z": 1,
+			"x": 864.4291534997895,
+			"y": 345.2077070890416,
+			"z": 0.9757638616984532,
 			"meta": {},
 			"id": "camera:page:page",
 			"typeName": "camera"
@@ -114,7 +114,7 @@
 			"brush": null,
 			"scribbles": [],
 			"cursor": {
-				"type": "cross",
+				"type": "default",
 				"rotation": 0
 			},
 			"isFocusMode": false,
@@ -124,7 +124,7 @@
 			"screenBounds": {
 				"x": 0,
 				"y": 0,
-				"w": 1470,
+				"w": 1690,
 				"h": 1500
 			},
 			"insets": [
@@ -160,7 +160,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:TbyiYSOUlrBsxlLUyVYqy",
 			"type": "geo",
 			"props": {
 				"w": 177,
@@ -180,6 +179,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a1",
+			"id": "shape:TbyiYSOUlrBsxlLUyVYqy",
 			"typeName": "shape"
 		},
 		{
@@ -189,7 +189,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:cbG9hr5ImFI7Mho_FVFR4",
 			"type": "geo",
 			"props": {
 				"w": 346,
@@ -209,6 +208,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a2",
+			"id": "shape:cbG9hr5ImFI7Mho_FVFR4",
 			"typeName": "shape"
 		},
 		{
@@ -218,7 +218,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:ofBRXyFPWYBIUqWMkH62T",
 			"type": "text",
 			"props": {
 				"color": "black",
@@ -232,6 +231,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a3",
+			"id": "shape:ofBRXyFPWYBIUqWMkH62T",
 			"typeName": "shape"
 		},
 		{
@@ -241,7 +241,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:kHC1S-e783DS2sJ6OiPv_",
 			"type": "text",
 			"props": {
 				"color": "black",
@@ -255,6 +254,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a4",
+			"id": "shape:kHC1S-e783DS2sJ6OiPv_",
 			"typeName": "shape"
 		},
 		{
@@ -264,7 +264,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:PNISFZVCM8eSY6oNOWWf4",
 			"type": "geo",
 			"props": {
 				"w": 754.5,
@@ -284,6 +283,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a5",
+			"id": "shape:PNISFZVCM8eSY6oNOWWf4",
 			"typeName": "shape"
 		},
 		{
@@ -293,7 +293,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:ZEJ6hjxbjEmquP6O-j-Mi",
 			"type": "text",
 			"props": {
 				"color": "black",
@@ -307,6 +306,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a6",
+			"id": "shape:ZEJ6hjxbjEmquP6O-j-Mi",
 			"typeName": "shape"
 		},
 		{
@@ -316,7 +316,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:fJUD7lHgAOb0roPsJkWJk",
 			"type": "geo",
 			"props": {
 				"w": 177,
@@ -336,6 +335,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a7",
+			"id": "shape:fJUD7lHgAOb0roPsJkWJk",
 			"typeName": "shape"
 		},
 		{
@@ -345,7 +345,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:9DxokJw5YxlfeIODJo_be",
 			"type": "geo",
 			"props": {
 				"w": 177,
@@ -365,6 +364,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a8",
+			"id": "shape:9DxokJw5YxlfeIODJo_be",
 			"typeName": "shape"
 		},
 		{
@@ -374,7 +374,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:DFWRFmbzPm8WL-_MEzdJd",
 			"type": "geo",
 			"props": {
 				"w": 289,
@@ -394,6 +393,7 @@
 			},
 			"parentId": "page:page",
 			"index": "a9",
+			"id": "shape:DFWRFmbzPm8WL-_MEzdJd",
 			"typeName": "shape"
 		},
 		{
@@ -403,7 +403,6 @@
 			"isLocked": false,
 			"opacity": 1,
 			"meta": {},
-			"id": "shape:hNkL3plLD__8NQqsL11K1",
 			"type": "draw",
 			"props": {
 				"segments": [
@@ -428,6 +427,7 @@
 			},
 			"parentId": "page:page",
 			"index": "aA",
+			"id": "shape:hNkL3plLD__8NQqsL11K1",
 			"typeName": "shape"
 		}
 	]

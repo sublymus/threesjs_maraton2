@@ -8,6 +8,7 @@ import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import { paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import PivotProductsFeature from '#models/pivot_products_feature';
+import FeaturesController from './features_controller.js';
 
 export default class ProductsController {
     async create_product({ request }: HttpContext) {
@@ -42,7 +43,7 @@ export default class ProductsController {
             },
         });
 
-        (features_id as string[]).forEach(async (feature_id) => {
+        (features_id as string[])?.forEach(async (feature_id) => {
             try {
                 await PivotProductsFeature.create({
                     feature_id,
@@ -69,7 +70,11 @@ export default class ProductsController {
             // action:`{${new Date().toISOString()},name:'creation','message'}`
         })
         product.id = product_id;
-        return product.$attributes
+        const features = await FeaturesController._get_features_of_product({product_id});
+        return{
+            ...product.$attributes,
+            features
+        } 
     }
     /*
     UserAction{
@@ -86,7 +91,6 @@ export default class ProductsController {
         const attributes = [
             'title',
             'description',
-            'features',
             'status',
             'is_dynamic_price',
             'stock',
@@ -176,7 +180,7 @@ export default class ProductsController {
     }
 
     async get_products({ request }: HttpContext) {                               // price_desc price_asc date_desc date_asc
-        const { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        const { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max  } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         let query = db.query().from(Product.table).select('*');
         if (category_id) {
             query = query.where('category_id', category_id);

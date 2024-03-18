@@ -13,9 +13,6 @@ export default class Category extends BaseModel {
   declare description?: string
 
   @column()
-  declare features: string
-
-  @column()
   declare catalog_id: string
 
   @column()

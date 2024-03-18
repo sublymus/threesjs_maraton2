@@ -5,8 +5,8 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.uuid('feature_id').notNullable().references('id').inTable('features').onDelete('CASCAD');
-      table.uuid('product_id').notNullable().references('id').inTable('products').onDelete('CASCAD');
+      table.uuid('feature_id').notNullable().references('id').inTable('features').onDelete('CASCADE');
+      table.uuid('product_id').notNullable().references('id').inTable('products').onDelete('CASCADE');
     })
   }
 

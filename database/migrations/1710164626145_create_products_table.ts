@@ -9,7 +9,6 @@ export default class extends BaseSchema {
 
       table.string('title').notNullable()
       table.string('description').notNullable()
-      table.string('features').notNullable()  // toutes les caracteristique editable ou non
       table.string('images').notNullable()
       table.string('model_images').notNullable()
       table.string('status').notNullable()

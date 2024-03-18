@@ -60,6 +60,9 @@ export default class Feature extends BaseModel {
   
   @column()
   declare mime: string
+
+  @column()
+  declare enums : string
   
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

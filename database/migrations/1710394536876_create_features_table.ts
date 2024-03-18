@@ -24,6 +24,7 @@ export default class extends BaseSchema {
       table.string('max');
       table.string('max_size');
       table.string('mime');
+      table.string('enums');
       
       table.timestamp('created_at')
       table.timestamp('updated_at')

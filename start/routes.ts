@@ -46,6 +46,10 @@ router.get('/get_feature/:id', [FeaturesController,'get_feature']);
 router.get('/get_features', [FeaturesController,'get_features']);
 router.put('/update_feature', [FeaturesController,'update_feature']);
 router.delete('/delete_feature/:id', [FeaturesController,'delete_feature']);
+router.post('/add_features_to_product', [FeaturesController,'add_features_to_product']);
+router.delete('/remove_features_to_product', [FeaturesController,'remove_features_to_product']);
+router.get('/get_features_of_product', [FeaturesController,'get_features_of_product']);
+router.get('/get_products_of_feature', [FeaturesController,'get_products_of_feature']);
 
 router.post('/create_f_value', [FValueController,'create_f_value']);
 router.get('/get_f_value/:id', [FValueController,'get_f_value']);

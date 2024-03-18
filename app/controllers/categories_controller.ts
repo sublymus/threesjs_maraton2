@@ -9,7 +9,7 @@ import db from '@adonisjs/lucid/services/db';
 export default class CategoriesController {
 
     async create_category({ request }: HttpContext) {
-        const { label, index , description , features , catalog_id } = request.body();
+        const { label, index , description , catalog_id } = request.body();
         const category_id = v4();
         const category = await Category.create({
             id: category_id,
@@ -18,7 +18,6 @@ export default class CategoriesController {
             catalog_id,
             description, 
             status:"PAUSE",
-            features : JSON.stringify(features),
         })
         category.id = category_id;
         return category.$attributes
