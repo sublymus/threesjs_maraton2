@@ -71,10 +71,7 @@ export default class ProductsController {
         })
         product.id = product_id;
         const features = await FeaturesController._get_features_of_product({product_id});
-        return{
-            ...product.$attributes,
-            features
-        } 
+        return Product.clientProduct(product,{features});
     }
     /*
     UserAction{
@@ -185,7 +182,7 @@ export default class ProductsController {
     }
 
     async get_products({ request }: HttpContext) {                               // price_desc price_asc date_desc date_asc
-        const { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max  } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        const { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max,is_features_required  } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         let query = db.query().from(Product.table).select('*');
         if (category_id) {
             query = query.where('category_id', category_id);
@@ -235,7 +232,21 @@ export default class ProductsController {
                     break;
             }
         }
-        return await query
+        const products =  await query
+        if(is_features_required){
+            const promises = products.map((product)=>new Promise(async(rev)=>{
+               try {
+                const features = await FeaturesController._get_features_of_product({product_id:product.id});
+                
+                rev(Product.clientProduct(product,{features}))
+               } catch (error) {
+                console.log('is_features_required',error.message)
+               }
+            }))
+            const fullProduct = (await Promise.allSettled(promises)).map(m=>(m as any).value);
+            return fullProduct
+        }
+        return  products;
     }
 
     async detail_products({ request }: HttpContext) {
