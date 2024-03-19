@@ -25,8 +25,9 @@ export default await Env.create(new URL('../', import.meta.url), {
 	GOOGLE_CALLBACK:Env.schema.string(),
 	GOOGLE:Env.schema.string(),
 	DEFAULT_LIMIT:Env.schema.string(),
-	FILE_STORAGE:Env.schema.string(),
-
+	FILE_STORAGE_PATH:Env.schema.string(),
+  FILE_STORAGE_URL:Env.schema.string(),
+  PUBLIC_PATH:Env.schema.string(),
 })
 
  

@@ -1,4 +1,4 @@
-import Category from "App/Models/Category";
+import Category from "../../models/category.js";
 
 const allCategories: any = {};
 
@@ -39,7 +39,7 @@ export async function parentList(id: string) {
     const category = await Category.find(id);
     if (category) {
       categories.push(category.$attributes);
-      id = category.parent_category_id;
+    //  id = category.parent_category_id;
     } else {
       break;
     }

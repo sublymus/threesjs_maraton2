@@ -71,7 +71,7 @@ export async function createFiles({
     );
   });
 
-  await createDir(env.get("FILE_STORAGE"))
+  await createDir(env.get("FILE_STORAGE_PATH"))
 
   return (await Promise.allSettled(promises))
     .filter((f) => f.status == "fulfilled")
@@ -82,7 +82,7 @@ async function createDir(dir: string) {
   try {
     await fs.stat(dir);
   } catch (error) {
-    await fs.mkdir(env.get("FILE_STORAGE"));
+    await fs.mkdir(dir);
   }
 }
 
@@ -111,8 +111,11 @@ export function moveFile({
         Math.random() * 10e6
       ).toString(36)}${count}_${table_name}_${column_name}_${table_id}.webp`;
 
-      let sharpOBJ = sharp(file.tmpPath);
+      const path = `${env.get("FILE_STORAGE_PATH")}/${fileName}`;
+      const url = `${env.get("FILE_STORAGE_URL")}/${fileName}`;
+
       if (compress && compress == 'img') {
+        let sharpOBJ = sharp(file.tmpPath);
         stat = await sharp(file.tmpPath).metadata();
         let iw = 0;
         let ih = 0;
@@ -142,22 +145,27 @@ export function moveFile({
           } : c)
         }
         sharpOBJ = sharpOBJ.webp({ quality: 90 })
+        // .composite([
+        //   {
+        //     input: "./logo_joumiadeals2.png",
+        //     top: ih - lh,
+        //     left: iw - lw,
+        //   },
+        // ])
+        
+        sharpOBJ.toFile(path, () => {
+          rev(url)
+        });
+      }else if(!compress || compress == 'none'){
+       await file.move(path);
+       rev(url);
+      }else if (compress && compress == 'zip'){
+        throw new Error(' compress ==> ZIP      not implemented');
       }
 
-      // .composite([
-      //   {
-      //     input: "./logo_joumiadeals2.png",
-      //     top: ih - lh,
-      //     left: iw - lw,
-      //   },
-      // ])
-      sharpOBJ.toFile(`${env.get("FILE_STORAGE")}/${fileName}`, () => {
-        rev(fileName)
-      });
-
-
-
     } catch (error) {
+      console.log(error.message);
+      
       rej(null);
     }
   });

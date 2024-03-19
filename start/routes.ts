@@ -57,7 +57,11 @@ router.get('/get_f_values', [FValueController,'get_f_values']);
 router.put('/update_f_value', [FValueController,'update_f_value']);
 router.delete('/delete_f_value/:id', [FValueController,'delete_f_value']);
 
-router.get('/fs/:fileName',({params,response})=>{
-    response.download(`${env.get("FILE_STORAGE")}/${params.fileName}`)
-    
+router.get(`${env.get("FILE_STORAGE_URL")}/*`,({params,response})=>{
+    const fileName = `/${(params['*'] as string[]).join('/')}`
+    response.download(`${env.get("FILE_STORAGE_PATH")}${fileName}`);
+});
+router.get('/public/*',({params,response})=>{
+    const fileName = `/${(params['*'] as string[]).join('/')}`
+    response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
 });

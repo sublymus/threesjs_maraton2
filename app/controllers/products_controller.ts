@@ -159,10 +159,15 @@ export default class ProductsController {
             table_name: "products",
             table_id: product.id,
             column_name: "scene_dir",
+            configure(data) {
+                return  data
+            },
         });
+
         product.scene_dir = url;
-        product.save();
-        return product.$attributes;
+        await  product.save();
+        const rest = product.$attributes
+        return rest
     }
     async get_product({ request }: HttpContext) {
         const id: string = request.param('id');

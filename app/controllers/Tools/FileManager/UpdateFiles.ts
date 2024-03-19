@@ -72,10 +72,11 @@ export async function updateFiles({
 
         return moveFile({ file, column_name, count: i, table_id, table_name ,compress });
       } else {
-        const filePath = `${env.get("FILE_STORAGE")}/${pseudoUrl}`;
+        const filePath = `${env.get("FILE_STORAGE_PATH")}/${pseudoUrl}`;
+        const fileUrl = `${env.get("FILE_STORAGE_URL")}/${pseudoUrl}`;
         if (fs.existsSync(filePath)) {
           fileLength++;
-          return Promise.resolve(pseudoUrl);
+          return Promise.resolve(fileUrl);
         } else return Promise.reject(null);
       }
     } catch (error) {
@@ -104,7 +105,7 @@ export async function updateFiles({
 
   _lastUrls.map((lastUrl) => {
     if (!newUrls.includes(lastUrl)) {
-      const filePath = `${env.get("FILE_STORAGE")}/${lastUrl}`;
+      const filePath = `${env.get("FILE_STORAGE_PATH")}/${lastUrl}`;
       if (fs.existsSync(filePath)) {
         fs.unlink(filePath, function (err) {
           if (err) return console.log(err);

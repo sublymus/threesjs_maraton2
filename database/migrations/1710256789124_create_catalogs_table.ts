@@ -6,11 +6,15 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').primary()
+     
       table.string('label').notNullable()
       table.string('description')
-      table.string('status')
       table.string('scene_dir')
+    
+    
       table.smallint('index').notNullable();
+      table.string('status').notNullable();
+      
       table.timestamp('created_at')
       table.timestamp('updated_at')
     })

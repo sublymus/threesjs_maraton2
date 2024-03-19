@@ -8,17 +8,16 @@ import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import PivotProductsFeature from '#models/pivot_products_feature';
 import Product from '#models/product';
-import { promises } from 'dns';
 
 export default class FeaturesController {
     async create_feature({ request }: HttpContext) {
-        const { collect_type, name, view, default_value, required, placeholder, capitalize, uppercase, lowercase, trim, match, max_length, min_length, max_size, max, min, mime, enums } = request.body();
+        const { collect_type, name, view, default_value, required, placeholder, capitalize, uppercase, lowercase, trim, match, max_length, min_length, max_size, max, min, mime, values } = request.body();
         const feature_id = v4();
         const icon_url = await createFiles({
             request,
             column_name: "icon",
             table_id: feature_id,
-            table_name: Feature.table,
+            table_name: Feature.table, 
             options: {
                 throwError: true,
                 // compress: 'img',
@@ -48,7 +47,7 @@ export default class FeaturesController {
             max,
             min,
             mime,
-            enums
+            values
         })
         feature.id = feature_id;
         return feature.$attributes

@@ -6,14 +6,14 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.string('id').primary();
-      
-      table.string('label');
+
+      table.string('label').notNullable();
+      table.uuid('feature_id').notNullable().references('id').inTable('features');
       table.string('price');
       table.string('url');
       table.string('file');
       table.string('icon');
       table.string('key_word');
-      table.uuid('feature_id').notNullable().references('id').inTable('features');
       table.string('value');
 
       table.timestamp('created_at')

@@ -5,7 +5,8 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.string('id').primary();
+      table.string('id').primary(); 
+
       table.string('collect_type').notNullable();
       table.string('name').unique().notNullable();
       table.boolean('required');
@@ -13,18 +14,19 @@ export default class extends BaseSchema {
       table.string('view');
       table.string('default_value');// primitve ou f_value
       table.string('icon')
-      table.string('lowercase')
-      table.string('uppercase');
-      table.string('capitalize');
+      table.boolean('lowercase')
+      table.boolean('uppercase');
+      table.boolean('capitalize');
       table.string('trim');
-      table.string('match');//tableau json
+      table.string('match');//tableau json [string  , string]
       table.string('min_length');
       table.string('max_length');
       table.string('min');
       table.string('max');
       table.string('max_size');
-      table.string('mime');
-      table.string('enums');
+      table.string('ext'); // //tableau json string[]
+      table.string('values');//tableau json string[]
+      table.boolean('isFValue');
       
       table.timestamp('created_at')
       table.timestamp('updated_at')

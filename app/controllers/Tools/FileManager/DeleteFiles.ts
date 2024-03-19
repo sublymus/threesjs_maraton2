@@ -5,12 +5,12 @@ import fs from "fs";
 
 export async function deleteFiles(id: string,fieldName?:string): Promise<number> {
     let deletedFileCounter = 0;
-    
-  fs.readdir(env.get("FILE_STORAGE"), (_, files) => {
+    const dir  = env.get("FILE_STORAGE_PATH");
+  fs.readdir(dir, (_, files) => {
     files?.forEach(fileName => {
       const selector = fieldName ? `${fieldName}_${id}`:id;
      if(fileName.includes(selector)){
-      const url = `${env.get("FILE_STORAGE")}/${fileName}`;
+      const url = `${dir}/${fileName}`;
       fs.unlink(url, function (err) {
         if (err){
           return fs.rmSync(url, { recursive: true, force: true });;
