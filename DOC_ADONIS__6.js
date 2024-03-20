@@ -1,3 +1,5 @@
+//http://localhost:3333/confidentiality
+//http://localhost:3333/condition
 /******************************
 CODE = Javascript + Typescripe
 ********************************

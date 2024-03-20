@@ -16,7 +16,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare id: string
 
   @column()
-  declare name: string
+  declare full_name: string
 
   @column()
   declare email: string
@@ -61,5 +61,11 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public static async setUUID (user: User) {
    if(!user.id)user.id = v4()
   }
-  static accessTokens = DbAccessTokensProvider.forModel(User)
+  static accessTokens = DbAccessTokensProvider.forModel(User,{
+    expiresIn: '30 days',
+    prefix: 'oat_',
+    table: 'auth_access_tokens',
+    type: 'auth_token',
+    tokenSecretLength: 40,
+  })
 }
