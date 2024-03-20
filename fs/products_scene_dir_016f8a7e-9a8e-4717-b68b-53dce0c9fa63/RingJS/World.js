@@ -1,4 +1,3 @@
-
 import { LocalLoader } from "./LocalLoader.js";
 class World {
     scene;
@@ -35,7 +34,6 @@ class World {
         this.dependencies.obj.OrbitControls = OrbitControls;
         this.dependencies.obj.THREE = THREE;
         this.dependencies.obj.RGBELoader = RGBELoader;
-        console.log('WorldManager',WorldManager);
         this.WorldManager =WorldManager;
         
         this.scene = new this.dependencies.obj.THREE.Scene();
@@ -82,8 +80,6 @@ class World {
     }
     update(t) {
         t = t / 10
-        // this.ring?.rotation.set(0, t, 0);
-        //this.ring.scale.set( (t%1000)/1000, (t%1000)/1000, (t%1000)/1000 );
         this.controls?.update();
     }
 
@@ -95,8 +91,6 @@ class World {
     close() {
         if (this.controls) this.controls.enabled = false;
     }
-
-
 }
 
 export { World };

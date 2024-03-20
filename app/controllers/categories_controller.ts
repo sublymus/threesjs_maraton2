@@ -37,8 +37,7 @@ export default class CategoriesController {
     }
 
     async update_view_category({ request }: HttpContext) {
-        const {category_id} = request.body();
-        console.log(category_id);
+        const {category_id,scene_dir} = request.body();
         
         const category = await Category.find(category_id);
 
@@ -48,15 +47,23 @@ export default class CategoriesController {
         //   return "ERROR Permission denied";
         // }
         const file  = request.file('scene_dir');
-        if(!file) return "scene_dir file not found";
+        let url;
+        if(file){
+            url = await unZipDir({
+                file: file,
+                table_name: "categories",
+                table_id: category.id,
+                column_name: "scene_dir",
+                configure(data) {
+                    return data
+                },
+            });
+        } else if(scene_dir){
+            url = scene_dir;
+        }else{
+            return "scene_dir file not found";
+        }
         
-        let url = await unZipDir({
-            file: file,
-            table_name: "categories",
-            table_id: category.id,
-            column_name: "scene_dir",
-        });
-
         category.scene_dir = url;
         await category.save();
         return category.$attributes; 

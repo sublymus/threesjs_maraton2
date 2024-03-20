@@ -118,19 +118,5 @@ export class LocalLoader {
   updateFeature(feature, value) {
     this.upDateFeatureMap[feature.name]?.(value)
   }
-  createBox(w, h, d) {
-
-    const boxGeometry = new this.dependencies.obj.THREE.BoxGeometry(w, h, d);
-    const boxMaterial = new this.dependencies.obj.THREE.MeshNormalMaterial({
-      side: this.dependencies.obj.THREE.DoubleSide,
-      opacity: 0.1,
-      transparent: true
-    });
-
-    const box = new this.dependencies.obj.THREE.Mesh(boxGeometry, boxMaterial)
-    box.geometry
-    return box
-  }
-
 
 }
