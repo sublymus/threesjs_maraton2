@@ -17,7 +17,7 @@ export default class extends BaseSchema {
       table.integer('price'); // require if is_dynamic_price
       table.boolean('is_dynamic_price')
       table.uuid('store_id').notNullable()
-      table.uuid('collaborator_id').notNullable()
+      table.uuid('collaborator_id').notNullable()//TODO remplacer par action
       
       table.uuid('engineer_id')
       table.string('scene_dir')

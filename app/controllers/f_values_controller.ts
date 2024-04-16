@@ -102,7 +102,13 @@ export default class FValueController {
             query = query.where('feature_id',feature_id);
         }
         query =query.limit(limit).offset((page - 1) * limit);
-        return await query
+        const total = await db.query().from(FValue.table).select('id');
+        return {
+            page,
+            limit,
+            total:total.length,
+            list:await query
+        }
     }
 
     async delete_f_value({ request }: HttpContext) {

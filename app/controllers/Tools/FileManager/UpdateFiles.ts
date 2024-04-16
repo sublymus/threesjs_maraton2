@@ -58,11 +58,16 @@ export async function updateFiles({
       if (pseudoUrl.startsWith(pointer)) {
         const file = request.file(pseudoUrl);
         if (!file) return Promise.reject(null);
+        console.log('file',file);
+        console.log('extname',extname && !extname.includes(file.extname || ""));
+        
         if (extname && !extname.includes(file.extname || "")) {
           if (throwError)
             throw new Error("File bad Extension : " + file?.extname);
           else return Promise.reject(null);
         }
+        console.log();
+        
         if (maxSize && file.size > maxSize) {
           if (throwError)
             throw new Error("File  size must be < " + file.size + " byte");
@@ -100,18 +105,24 @@ export async function updateFiles({
     .filter((f) => f.status === "fulfilled")
     .map((m) => (m as any).value);
 
-  console.log("### _lastUrls ", _lastUrls);
-  console.log("### newUrls ", newUrls);
-
-  _lastUrls.map((lastUrl) => {
+  _lastUrls.forEach((lastUrl) => {
     if (!newUrls.includes(lastUrl)) {
-      const filePath = `${env.get("FILE_STORAGE_PATH")}/${lastUrl}`;
+      const filePath = `.${lastUrl}`;
+      console.log({filePath});
+      
       if (fs.existsSync(filePath)) {
         fs.unlink(filePath, function (err) {
           if (err) return console.log(err);
         });
+      }else{
+        console.log('ERROR file don\'t exist');
+        
       }
     }
   });
+
+  console.log("### _lastUrls ", _lastUrls);
+  console.log("### newUrls ", newUrls);
+
   return newUrls;
 }

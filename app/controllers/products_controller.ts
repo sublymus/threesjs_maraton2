@@ -10,6 +10,7 @@ import db from '@adonisjs/lucid/services/db';
 import PivotProductsFeature from '#models/pivot_products_feature';
 import FeaturesController from './features_controller.js';
 
+let i = 0;
 export default class ProductsController {
     async create_product({ request }: HttpContext) {
         const { title, description, features_id, price, stock, category_id, is_dynamic_price } = request.body();
@@ -70,8 +71,8 @@ export default class ProductsController {
             // action:`{${new Date().toISOString()},name:'creation','message'}`
         })
         product.id = product_id;
-        const features = await FeaturesController._get_features_of_product({product_id});
-        return Product.clientProduct(product,{features});
+        const features = await FeaturesController._get_features_of_product({ product_id });
+        return Product.clientProduct(product, { features });
     }
     /*
     UserAction{
@@ -157,12 +158,12 @@ export default class ProductsController {
             table_id: product.id,
             column_name: "scene_dir",
             configure(data) {
-                return  data
+                return data
             },
         });
 
         product.scene_dir = url;
-        await  product.save();
+        await product.save();
         const rest = product.$attributes
         return rest
     }
@@ -182,7 +183,9 @@ export default class ProductsController {
     }
 
     async get_products({ request }: HttpContext) {                               // price_desc price_asc date_desc date_asc
-        const { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max,is_features_required  } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        console.log(request.qs());
+
+        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         let query = db.query().from(Product.table).select('*');
         if (category_id) {
             query = query.where('category_id', category_id);
@@ -194,9 +197,13 @@ export default class ProductsController {
         }
         if (text) {
             const like = `%${(text as string).split('').join('%')}%`;
-            query = query.andWhere((q) => {
-                q.whereLike('title', like).orWhereLike('description', like);
-            });
+            if((text as string).startsWith('#')){
+                query = query.andWhereLike('id', like);
+            }else{
+                query = query.andWhere((q) => {
+                    q.whereLike('id', like).orWhereLike('title', like).orWhereLike('description', like);
+                });
+            }
         }
         if (price_max || price_min) {
             query = query.andWhere((q) => {
@@ -208,45 +215,48 @@ export default class ProductsController {
                 q.whereBetween('stock', [stock_min || 0, stock_max || Number.MAX_VALUE]);
             });
         }
+        const total = (await query).length;
+        let pages = Math.ceil(total/limit);
+        page = pages<page? pages:page;
         query = query.limit(limit).offset((page - 1) * limit);
+        
         if (order_by) {
-            switch (order_by) {
-                case "date_asc":
-                    query = query.orderBy("products.created_at", "asc");
-                    break;
-
-                case "date_desc":
-                    query = query.orderBy("products.created_at", "desc");
-                    break;
-
-                case "price_asc":
-                    query = query.orderBy("price", "asc");
-                    break;
-
-                case "price_desc":
-                    query = query.orderBy("price", "desc");
-                    break;
-
-                default:
-                    query = query.orderBy("products.created_at", "desc");
-                    break;
+            if (order_by == 'date_asc') query = query.orderBy("products.created_at", "asc");
+            else if (order_by == 'date_desc') query = query.orderBy("products.created_at", "desc");
+            else {
+                const o =  (order_by as string) 
+                const c = o.substring(0, o.lastIndexOf('_'));
+                const m = o.substring(o.lastIndexOf('_') + 1, o.length) as any;
+                query = query.orderBy(c, m);
             }
         }
-        const products =  await query
-        if(is_features_required){
-            const promises = products.map((product)=>new Promise(async(rev)=>{
-               try {
-                const features = await FeaturesController._get_features_of_product({product_id:product.id});
-                
-                rev(Product.clientProduct(product,{features}))
-               } catch (error) {
-                console.log('is_features_required',error.message)
-               }
+        const products = await query;
+        if (is_features_required) {
+            const promises = products.map((product) => new Promise(async (rev) => {
+                try {
+                    const features = await FeaturesController._get_features_of_product({ product_id: product.id });
+
+                    rev(Product.clientProduct(product, { features }))
+                } catch (error) {
+                    console.log('is_features_required', error.message)
+                }
             }))
-            const fullProduct = (await Promise.allSettled(promises)).map(m=>(m as any).value);
-            return fullProduct
+            const fullProduct = (await Promise.allSettled(promises)).map(m => (m as any).value);
+            return {
+                page,
+                limit,
+                total,
+                list: fullProduct,
+            };
         }
-        return  products;
+
+
+        return {
+            page,
+            limit,
+            total,
+            list: products.map(p => Product.clientProduct(p))
+        };
     }
 
     async detail_products({ request }: HttpContext) {

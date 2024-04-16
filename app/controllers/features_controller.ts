@@ -8,6 +8,7 @@ import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import PivotProductsFeature from '#models/pivot_products_feature';
 import Product from '#models/product';
+import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
 
 export default class FeaturesController {
     async create_feature({ request }: HttpContext) {
@@ -17,7 +18,7 @@ export default class FeaturesController {
             request,
             column_name: "icon",
             table_id: feature_id,
-            table_name: Feature.table, 
+            table_name: Feature.table,
             options: {
                 throwError: true,
                 // compress: 'img',
@@ -29,25 +30,27 @@ export default class FeaturesController {
         });
         const feature = await Feature.create({
             id: feature_id,
-            collect_type,
             name,
+            collect_type,
+            required,
+            placeholder,
             view,
             default_value,
             icon: JSON.stringify(icon_url),
-            required,
-            placeholder,
+            lowercase,
             capitalize,
             uppercase,
-            lowercase,
             trim,
             match,
-            max_length,
             min_length,
+            max_length,
             max_size,
             max,
             min,
-            mime,
-            values
+            // mime,
+            // ext,
+            values,
+            // is_f_alue
         })
         feature.id = feature_id;
         return feature.$attributes
@@ -55,15 +58,44 @@ export default class FeaturesController {
 
     async update_feature({ request }: HttpContext) {
         const body = request.body();
-        const attributes = ['collect_type', 'name', 'view', 'default_value_id', 'icon', 'required', 'placeholder', 'capitalize', 'uppercase', 'lowercase', 'trim', 'match', 'max_length', 'min_length', 'max_size', 'max', 'min', 'mime', 'enum'] as const;
+
         const feature = await Feature.find(body.feature_id);
         if (!feature) return 'feature not found';
-        attributes.forEach((attribute) => {
+        (['collect_type', 'name', 'view', 'default_value_id', 'required', 'placeholder', 'capitalize', 'uppercase', 'lowercase', 'trim', 'match', 'max_length', 'min_length', 'max_size', 'max', 'min', 'mime', 'enum']).forEach((attribute) => {
             //@ts-ignore
             if (body[attribute]) feature[attribute] = body[attribute];
         });
+        const urls: any = {};
+
+        for (const a of ['icon'] as const) {
+            urls[a] = await updateFiles({
+                request,
+                table_name: "features",
+                table_id: feature.id,
+                column_name: a,
+                lastUrls: feature[a] || '[]',
+                newPseudoUrls: body[a],
+                options: {
+
+                    throwError: true,
+                    min: 1,
+                    max: 7,
+                    compress: 'img',
+                    extname: ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng', 'gif', "jpg", "png", "jpeg", "webp"],
+                    maxSize: 12 * 1024 * 1024,
+                },
+            });
+            feature[a] = JSON.stringify(urls[a]);
+
+        }
+
         await feature.save();
-        return feature.$attributes
+        console.log(feature);
+
+        return {
+            ...feature.$attributes,
+            ...urls
+        }
     }
 
     async get_feature({ request }: HttpContext) {
@@ -74,10 +106,43 @@ export default class FeaturesController {
     }
 
     async get_features({ request }: HttpContext) {
-        const { page, limit } = paginate(request.qs() as { page: number | undefined, limit: number | undefined, catalog_id: string } & { [k: string]: any });
+        let { page, limit , order_by , text } = paginate(request.qs() as { page: number | undefined, limit: number | undefined, catalog_id: string } & { [k: string]: any });
+        
         let query = db.query().from(Feature.table).select('*')
+        if (text) {
+            const like = `%${(text as string).split('').join('%')}%`;
+            if((text as string).startsWith('#')){
+                query = query.andWhereLike('id', like);
+            }else{
+                query = query.andWhere((q) => {
+                    q.whereLike('id', like).orWhereLike('name', like);
+                });
+            }
+           
+        }
+        //consolider le order_by
+        if (order_by) {
+            if (order_by == 'date_asc') query = query.orderBy("products.created_at", "asc");
+            else if (order_by == 'date_desc') query = query.orderBy("products.created_at", "desc");
+            else {
+                const o =  (order_by as string) 
+                const c = o.substring(0, o.lastIndexOf('_'));
+                const m = o.substring(o.lastIndexOf('_') + 1, o.length) as any;
+                query = query.orderBy(c, m);
+            }
+        }
+        const total = (await query).length;
+        let pages = Math.ceil(total/limit);
+        page = pages<page? pages:page;
         query = query.limit(limit).offset((page - 1) * limit);
-        return await query
+        
+       console.log(limit);
+         return {
+            page,
+            limit,
+            total:total,
+            list:await query
+        }
     }
 
     async delete_feature({ request }: HttpContext) {
@@ -133,8 +198,8 @@ export default class FeaturesController {
 
     async get_features_of_product({ request }: HttpContext) {
         const { product_id, page, limit } = request.qs();
-        console.log(product_id , request.qs());
-        
+        console.log(product_id, request.qs());
+
         return FeaturesController._get_features_of_product({ product_id, page, limit })
     }
 
@@ -160,13 +225,13 @@ export default class FeaturesController {
     async get_products_of_feature({ request }: HttpContext) {
         const { feature_id, page, limit } = request.qs();
         if (!feature_id) return "feature_id is undefined"
-        let products =[]
+        let products = []
         try {
             products = await db.query().from(PivotProductsFeature.table).select("*")
-            .innerJoin('products', 'products.id', 'product_id').where('feature_id', feature_id).limit(limit).offset((page - 1) * limit);;
+                .innerJoin('products', 'products.id', 'product_id').where('feature_id', feature_id).limit(limit).offset((page - 1) * limit);;
 
         } catch (error) {
-            return 'feature not found';            
+            return 'feature not found';
         }
         return products
     }

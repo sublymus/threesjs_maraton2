@@ -5,16 +5,46 @@ import env from "#start/env";
 import { v4 } from "uuid";
 import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
+import hash from '@adonisjs/core/services/hash'
 
 export default class AuthController {
+
     public async google_connexion({ ally }: HttpContext) {
         return ally.use("google").redirect();
     }
 
-    public async disconnection({ auth }: HttpContext) {
-        // auth.use("api").revoke();
+    public async connexion({ request, auth }: HttpContext) {
+        const { email, password } = request.qs();
+
+        const user = await User.findBy('email', email);
+
+        if (!user) {
+            //? This is a security measure to prevent timing attacks.
+            await hash.use('scrypt').make('password')
+            return null
+        }
+
+        const hasValidPassword = await hash.verify(user.password, password)
+
+        if (!hasValidPassword) {
+            return null
+        }
+        
         return {
-            connexion: false,
+            ...user.$attributes,
+            photos:JSON.parse(user.photos||'[]'),
+            token: (await User.accessTokens.create(user)).value?.release(),
+        }
+    }
+
+    public async disconnection({ auth }: HttpContext) {
+        // const user  = auth.user;
+        // const currentAccessToken = user?.currentAccessToken;
+        const getUser = auth.user?.id
+        const user = await User.findOrFail(getUser)
+        await User.accessTokens.delete(user, user.id)
+        return {
+            disconnection: getUser,
         };
     }
 
@@ -41,15 +71,19 @@ export default class AuthController {
         if (user) {
             return response
                 .redirect()
-                .withQs({
-                    token: (await User.accessTokens.create(user)).value?.release(),
-                    ...JSON.parse(JSON.stringify(user.$attributes))
-                })
-                .toPath(`${env.get('FRONT_ORIGINE')}${env.get('FRONT_END_HOME')}`);
+                .toPath(`${env.get('FRONT_ORIGINE')}/#${env.get('FRONT_END_HOME')}=${
+                    JSON.stringify({
+                        token: (await User.accessTokens.create(user)).value?.release(),
+                    ...JSON.parse(JSON.stringify({
+                        ...user.$attributes,
+                        photos:JSON.parse(user.photos||'[]'),
+                    }))
+                    })
+                }`);
         } else {
-            const user_id= v4();
+            const user_id = v4();
             const newUser = await User.create({
-                id:user_id ,
+                id: user_id,
                 email,
                 full_name: name,
                 password: id,
@@ -58,12 +92,15 @@ export default class AuthController {
             newUser.id = user_id;
             newUser.$attributes.id = user_id;
             //await _create_client( {name, email, password}, auth )
-            response.redirect()
-                .withQs({
-                    token: (await User.accessTokens.create(newUser)).value?.release(),
-                    ...JSON.parse(JSON.stringify(newUser.$attributes))
-                })
-                .toPath(`${env.get('FRONT_ORIGINE')}${env.get('FRONT_END_REGISTER')}`);
+            response.redirect().toPath(`${env.get('FRONT_ORIGINE')}/#${env.get('FRONT_END_HOME')}=${
+                    JSON.stringify({
+                        token: (await User.accessTokens.create(newUser)).value?.release(),
+                    ...JSON.parse(JSON.stringify({
+                        ...newUser.$attributes,
+                        photos:JSON.parse(newUser.photos||'[]'),
+                    }))
+                    })
+                }`);
         }
     }
 
@@ -71,7 +108,7 @@ export default class AuthController {
         const { full_name, email, password } = request.body();
         const id = v4();
         const existingUser = await User.findBy("email", email);
-        if(existingUser) return "this email is already used ";
+        if (existingUser) return "this email is already used ";
         try {
             const photos = await createFiles({
                 request,
@@ -98,14 +135,15 @@ export default class AuthController {
             user.id = id;
             user.$attributes.id = id;
             return {
-               ...user.$attributes,
-               token: (await User.accessTokens.create(user)).value?.release(),
+                ...user.$attributes,
+                photos:JSON.parse(user.photos||'[]'),
+                token: (await User.accessTokens.create(user)).value?.release(),
             }
-                
+
         } catch (error) {
             console.log(error);
-            
-            deleteFiles(id , 'photos');
+
+            deleteFiles(id, 'photos');
         }
     }
 

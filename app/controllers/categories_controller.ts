@@ -77,22 +77,41 @@ export default class CategoriesController {
     }
 
     async get_categories({ request }: HttpContext) {
-        const {page , limit , catalog_id, index , text} = paginate(request.qs() as  {page:number|undefined,limit:number|undefined,catalog_id:string}&{[k:string]:any});
-        let query = db.query().from(Category.table).select('*')
+        let {page , limit , catalog_id, index , text , order_by} = paginate(request.qs() as  {page:number|undefined,limit:number|undefined,catalog_id:string}&{[k:string]:any});
+        let query = db.query().from(Category.table).select('categories.*').count('products.id','total_products').leftJoin('products','products.category_id','categories.id').groupBy('categories.id');
+        const sortable = ['']
         if(catalog_id){
             query = query.where('catalog_id',catalog_id);
         }
         if(text){
             const like = `%${(text as string).split('').join('%')}%`;
-            query = query.andWhere((q)=>{
-                q.whereLike('label',like).orWhereLike('description',like)
-            })
+            if((text as string).startsWith('#')){
+                query = query.andWhereLike('id', like);
+            }else{
+                query = query.andWhere((q) => {
+                    q.whereLike('id', like).orWhereLike('label', like).orWhereLike('categories.description', like);
+                });
+            }
         }
         if(index){
             query = query.andWhere('index',index);
         }
-        query =query.limit(limit).offset((page - 1) * limit).orderBy('index','asc');
-        return await query
+        if (order_by) {
+            const o =  (order_by as string) 
+            const c =o.substring(0,o.lastIndexOf('_'));
+            const m =o.substring(o.lastIndexOf('_')+1,o.length)as any;
+            query = query.orderBy(c,m);
+        }
+        let total = (await query).length;
+        let pages = Math.ceil(total/limit);
+        page = pages<page? pages:page;
+        query =query.limit(limit).offset((page - 1) * limit);
+        return {
+            page,
+            limit,
+            total,
+            list:await query
+        }
     }
 
     async delete_category({ request }: HttpContext) {

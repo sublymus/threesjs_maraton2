@@ -11,13 +11,14 @@ import FValueController from '#controllers/f_values_controller';
 // router.get('/', [UsersController,'connexion']);
 
 router.get('/google_connexion',[AuthController,'google_connexion']);
+router.get('/connexion',[AuthController,'connexion']);
 router.get('/gl_push_info',[AuthController,'google_push_info']);
 router.post('/create_client',[AuthController,'create_client']);
 router.get('/disconnection',[AuthController,'disconnection']);
 
 
 router.get('me/', [UsersController,'me']);
-router.get('edit_me/', [UsersController,'edit_me']);
+router.post('edit_me/', [UsersController,'edit_me']);
 router.get('detail_all_user/', [UsersController,'detail_all_user']);
 router.get('/user', [UsersController,'user']);
 

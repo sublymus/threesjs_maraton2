@@ -72,22 +72,34 @@ export default class CatalogsController {
     }
 
     async get_catalogs({ request }: HttpContext) {
-        const {page , limit , catalog_id , text , index , is_category_required} = paginate(request.qs() as  {page:number|undefined,limit:number|undefined}&{[k:string]:any});
+        let {page , limit , catalog_id , text , index , order_by ,is_category_required} = paginate(request.qs() as  {page:number|undefined,limit:number|undefined}&{[k:string]:any});
         let query = db.query().from(Catalog.table).select('*');
         if(catalog_id){
             query = query.where('id',catalog_id);
         }
         if(text){
             const like = `%${(text as string).split('').join('%')}%`;
-            query = query.andWhere((q)=>{
-                q.whereLike('label',like).orWhereLike('description',like)
-            })
+            if((text as string).startsWith('#')){
+                query = query.andWhereLike('id', like);
+            }else{
+                query = query.andWhere((q) => {
+                    q.whereLike('id', like).orWhereLike('label', like).orWhereLike('description', like);
+                });
+            }
         }
         if(index){
             query = query.andWhere('index',index);
         }
-     
-        query = query.limit(limit).offset((page - 1) * limit).orderBy('index','asc');
+        if (order_by) {
+            const o =  (order_by as string) 
+            const c =o.substring(0,o.lastIndexOf('_'));
+            const m =o.substring(o.lastIndexOf('_')+1,o.length)as any;
+            query = query.orderBy(c,m);
+        }
+        let total = (await query).length;
+        let pages = Math.ceil(total/limit);
+        page = pages<page? pages:page;
+        query = query.limit(limit).offset((page - 1) * limit)
         const catalogs = await query
         
         if(is_category_required){
@@ -104,10 +116,21 @@ export default class CatalogsController {
                }
             }))
             const fullCatalog = (await Promise.allSettled(promises)).map(m=>(m as any).value)
-            return fullCatalog
+            return {
+                page,
+                limit,
+                total,
+                list:fullCatalog
+            }
         }
-
-        return catalogs
+      
+        
+        return {
+            page,
+            limit,
+            total,
+            list : catalogs,
+        }
     }
 
     async delete_catalog({ request }: HttpContext) {

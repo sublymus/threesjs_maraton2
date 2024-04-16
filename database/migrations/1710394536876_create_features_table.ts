@@ -24,9 +24,8 @@ export default class extends BaseSchema {
       table.string('min');
       table.string('max');
       table.string('max_size');
+      table.string('mime');
       table.string('ext'); // //tableau json string[]
-      table.string('values');//tableau json string[]
-      table.boolean('isFValue');
       
       table.timestamp('created_at')
       table.timestamp('updated_at')
