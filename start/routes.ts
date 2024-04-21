@@ -7,6 +7,7 @@ import CatalogsController from '#controllers/catalogs_controller';
 import CategoriesController from '#controllers/categories_controller';
 import FeaturesController from '#controllers/features_controller';
 import FValueController from '#controllers/f_values_controller';
+import StoresController from '#controllers/stores_controller';
 
 // router.get('/', [UsersController,'connexion']);
 
@@ -21,7 +22,7 @@ router.get('me/', [UsersController,'me']);
 router.post('edit_me/', [UsersController,'edit_me']);
 router.get('detail_all_user/', [UsersController,'detail_all_user']);
 router.get('/user', [UsersController,'user']);
-
+//Product
 router.post('/create_product', [ProductsController,'create_product']);
 router.get('/get_product/:id', [ProductsController,'get_product']);
 router.get('/detail_product/:id', [ProductsController,'detail_product']);
@@ -30,7 +31,7 @@ router.get('/detail_products', [ProductsController,'detail_products']);
 router.put('/update_product', [ProductsController,'update_product']);
 router.put('/update_view_product', [ProductsController,'update_view_product']);
 router.delete('/delete_product/:id', [ProductsController,'delete_product']);
-
+//Catlog
 router.post('/create_catalog', [CatalogsController,'create_catalog']);
 router.get('/get_catalog/:id', [CatalogsController,'get_catalog']);
 router.get('/get_catalogs', [CatalogsController,'get_catalogs']);
@@ -39,7 +40,7 @@ router.get('/get_catalog_categories', [CatalogsController,'get_catalog_categorie
 router.put('/update_catalog', [CatalogsController,'update_catalog']);
 router.put('/update_view_catalog', [CatalogsController,'update_view_catalog']);
 router.delete('/delete_catalog/:id', [CatalogsController,'delete_catalog']);
-
+//Category
 router.post('/create_category', [CategoriesController,'create_category']);
 router.get('/get_category/:id', [CategoriesController,'get_category']);
 router.get('/get_categories', [CategoriesController,'get_categories']);
@@ -47,7 +48,7 @@ router.get('/get_category_products', [CategoriesController,'get_category_product
 router.put('/update_category', [CategoriesController,'update_category']);
 router.put('/update_view_category', [CategoriesController,'update_view_category']);
 router.delete('/delete_category/:id', [CategoriesController,'delete_category']);
-
+//Features
 router.post('/create_feature', [FeaturesController,'create_feature']);
 router.get('/get_feature/:id', [FeaturesController,'get_feature']);
 router.get('/get_features', [FeaturesController,'get_features']);
@@ -57,12 +58,16 @@ router.post('/add_features_to_product', [FeaturesController,'add_features_to_pro
 router.delete('/remove_features_to_product', [FeaturesController,'remove_features_to_product']);
 router.get('/get_features_of_product', [FeaturesController,'get_features_of_product']);
 router.get('/get_products_of_feature', [FeaturesController,'get_products_of_feature']);
-
+//FValue
 router.post('/create_f_value', [FValueController,'create_f_value']);
 router.get('/get_f_value/:id', [FValueController,'get_f_value']);
 router.get('/get_f_values', [FValueController,'get_f_values']);
 router.put('/update_f_value', [FValueController,'update_f_value']);
 router.delete('/delete_f_value/:id', [FValueController,'delete_f_value']);
+//Store
+router.get('/get_store_var', [StoresController,'get_store_var']);
+
+
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`,({params,response})=>{
     const fileName = `/${(params['*'] as string[]).join('/')}`
