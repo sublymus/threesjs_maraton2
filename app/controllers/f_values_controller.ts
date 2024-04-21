@@ -21,7 +21,7 @@ export default class FValueController {
                 // compress: 'img',
                 min: 0,
                 max: 1,
-                // extname: ["jpg", "jpeg", "webp", 'png'],
+                // extname:  ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng', 'gif', "jpg", "png", "jpeg", "webp"],
                 maxSize: 12 * 1024 * 1024,
             },
         });
@@ -35,7 +35,7 @@ export default class FValueController {
                 // compress: 'img',
                 min: 0,
                 max: 1,
-                // extname: ["jpg", "jpeg", "webp", 'png'],
+                // extname:  ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng', 'gif', "jpg", "png", "jpeg", "webp"],
                 maxSize: 12 * 1024 * 1024,
             },
         });
@@ -77,7 +77,7 @@ export default class FValueController {
                     min: 0,
                     max: 1,
                     // compress: 'img',
-                    // extname: ["jpg", "jpeg", "webp"],
+                    // extname:  ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng', 'gif', "jpg", "png", "jpeg", "webp"],
                     maxSize: 12 * 1024 * 1024,
                 },
             });

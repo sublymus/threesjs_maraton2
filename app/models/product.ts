@@ -3,7 +3,7 @@ import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
 import { v4 } from 'uuid'
 
 enum PRODUCT_STATUS{
-  PAUSE,VISIBLE,DELETED,
+  PAUSE='PAUSE',VISIBLE='VISIBLE',TRASH='TRASH',
 } 
 
 export default class Product extends BaseModel {
@@ -67,7 +67,6 @@ export default class Product extends BaseModel {
 
   public static clientProduct(product : Product , addon? : Record<string,any>){
     const att ={... JSON.parse(JSON.stringify(product))};
-    ['status','collaborator_id','engineer_id'].forEach(c => delete att[c]);
     ['images','model_images'].forEach(f => {
       try {
         att[f] = JSON.parse(att[f]||"[]");

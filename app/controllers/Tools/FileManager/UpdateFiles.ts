@@ -49,7 +49,6 @@ export async function updateFiles({
 
   const pointer = column_name + "_";
   let fileLength = 0;
-  // console.log({_newPseudoUrls});
 
   const promisesAdd = _newPseudoUrls.map((pseudoUrl, i) => {
     console.log({ pseudoUrl });
@@ -77,8 +76,10 @@ export async function updateFiles({
 
         return moveFile({ file, column_name, count: i, table_id, table_name ,compress });
       } else {
-        const filePath = `${env.get("FILE_STORAGE_PATH")}/${pseudoUrl}`;
-        const fileUrl = `${env.get("FILE_STORAGE_URL")}/${pseudoUrl}`;
+        const filePath = `${env.get("FILE_STORAGE_PATH")}${pseudoUrl.replace(env.get("FILE_STORAGE_URL"),'')}`;
+        const fileUrl = `${pseudoUrl}`;
+        console.log({filePath, fileUrl});
+        
         if (fs.existsSync(filePath)) {
           fileLength++;
           return Promise.resolve(fileUrl);

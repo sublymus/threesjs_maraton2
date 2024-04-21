@@ -24,7 +24,7 @@ export default class FeaturesController {
                 // compress: 'img',
                 min: 0,
                 max: 1,
-                // extname: ["jpg", "jpeg", "webp", 'png'],
+                // extname:  ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng', 'gif', "jpg", "png", "jpeg", "webp"],
                 maxSize: 12 * 1024 * 1024,
             },
         });
@@ -131,7 +131,7 @@ export default class FeaturesController {
                 query = query.orderBy(c, m);
             }
         }
-        const total = (await query).length;
+        const total = Math.max((await query).length ,1);
         let pages = Math.ceil(total/limit);
         page = pages<page? pages:page;
         query = query.limit(limit).offset((page - 1) * limit);
@@ -148,7 +148,7 @@ export default class FeaturesController {
     async delete_feature({ request }: HttpContext) {
         const feature_id = request.param('id');
         await deleteFiles(feature_id);
-        await (await Feature.find(feature_id))?.delete();
+        await db.rawQuery('delete from `features` where `id` = :id;',{id:feature_id});
         return {
             isDeleted: true,
         }
@@ -169,7 +169,7 @@ export default class FeaturesController {
                 feature_id,
                 product_id
             })
-            rev(null)
+            rev(null);
         }))
         await Promise.allSettled(promises);
         const features = await FeaturesController._get_features_of_product({ product_id })

@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.string('id').primary();
 
       table.string('label').notNullable();
-      table.uuid('feature_id').notNullable().references('id').inTable('features');
+      table.uuid('feature_id').notNullable().references('id').inTable('features').onDelete('CASCADE');
       table.string('price');
       table.string('url');
       table.string('file');
