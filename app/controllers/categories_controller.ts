@@ -119,7 +119,7 @@ export default class CategoriesController {
                 query = query.andWhereLike('id', like);
             } else {
                 query = query.andWhere((q) => {
-                    q.whereLike('id', like).orWhereLike('label', like).orWhereLike('categories.description', like);
+                    q.whereLike('categories.id', like).orWhereLike('label', like).orWhereLike('categories.description', like);
                 });
             }
         }

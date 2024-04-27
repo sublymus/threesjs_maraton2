@@ -6,17 +6,27 @@ import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { v4 } from 'uuid'
 
+
+export enum USER_TYPE {
+  CLIENT = 'CLIENT',
+  COLLABORATOR = 'COLLABORATOR',
+  OWNER = 'OWNER',
+  MODERATOR = 'MODERATOR',
+  ADMIN = 'ADMIN'
+}
+
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
   passwordColumnName: 'password',
 });
 
 export default class User extends compose(BaseModel, AuthFinder) {
+
   @column({ isPrimary: true })
   declare id: string
 
   @column()
-  declare full_name: string
+  declare name: string
 
   @column()
   declare email: string
@@ -31,25 +41,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare photos: string | null
 
   @column()
-  declare provider_id: string | null
-
-  @column()
   declare address_id: string | null
 
-  @column()
-  declare admin_id: string | null
-
-  @column()
-  declare client: string | null
-
-  @column()
-  declare service: string | null
-
-  @column()
-  declare engineer: string | null
-
-  @column()
-  declare collaborator: string | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -57,11 +50,18 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 
-  @beforeSave()
-  public static async setUUID (user: User) {
-   if(!user.id)user.id = v4()
+  public static ParseUser(user: User) {
+    let photos = [];
+    try {
+      photos = JSON.parse(user.photos || '[]')
+    } catch (error) { }
+    return {
+      ...(user.$attributes||user),
+      photos,
+      password: undefined,
+    } as any as User['$attributes']
   }
-  static accessTokens = DbAccessTokensProvider.forModel(User,{
+  static accessTokens = DbAccessTokensProvider.forModel(User, {
     expiresIn: '30 days',
     prefix: 'oat_',
     table: 'auth_access_tokens',

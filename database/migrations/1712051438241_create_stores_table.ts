@@ -5,15 +5,19 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.uuid('id')
+      table.uuid('id').primary()
 
-      table.string('name').notNullable();
-      table.uuid('provider_id').notNullable().references('id').inTable('providers');
+      table.string('name').notNullable().unique();
+      table.uuid('owner_id').notNullable().references('id').inTable('users');
       table.string('description')
-      table.uuid('interface_id')//.notNullable();
+      table.uuid('interface_id')
+      table.string('website')
+      table.string('phone')
+      table.string('store_email')
+      table.string('banners')
+      table.uuid('address_id')
       table.timestamp('expire_at')
       
-
       table.timestamp('created_at')
       table.timestamp('updated_at')
     })

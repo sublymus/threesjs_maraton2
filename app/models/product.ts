@@ -10,7 +10,7 @@ export default class Product extends BaseModel {
   
   
 
-  public static STATUS  = PRODUCT_STATUS;
+  public static STATUS  =  PRODUCT_STATUS;
 
   @column({ isPrimary: true })
   declare id: string

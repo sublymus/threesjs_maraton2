@@ -5,10 +5,10 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.uuid('id')
-
-      table.string('name')
-      table.uuid('collaborator_id').notNullable().references('id').inTable('users');
+      table.uuid('id').primary();
+      table.string('name').notNullable()
+      table.uuid('entreprise_id_id').notNullable()
+      
       table.boolean('filter_client')
       table.boolean('ban_client')
       table.boolean('filter_collaborator')
@@ -32,25 +32,3 @@ export default class extends BaseSchema {
     this.schema.dropTable(this.tableName)
   }
 }
-
-/*
-
-filter_flient
-ban_client
-filter_collaborator
-ban_collaborator
-create_delete_collaborator
-
-manage_interface
-
-filter_product
-edit_product
-create_delete_product
-manage_scene_product : boolean
-
-chat_client
-
-filter_command
-manage_command
-
-*/

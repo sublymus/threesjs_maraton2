@@ -104,29 +104,7 @@ export default class CatalogsController {
             list: products.map(p => Product.clientProduct(p)),
         }
     }
-    async get_catalog_categories({ request }: HttpContext) {
-        let { catalog_id, page, limit } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
-        if (!catalog_id) return 'Catalog not found'
-
-        console.log('categories ==', catalog_id);
-        let query = db.from('categories').select('*').where('catalog_id', catalog_id);
-        let total = (await query).length;
-        let pages = Math.ceil(total / limit);
-        page = Math.max(pages < page ? pages : page, 1);
-        query = query.limit(limit).offset((page - 1) * limit);
-        console.log(total, limit, page);
-
-        const categories = await query;
-        console.log('categories ==', categories);
-
-        return {
-            page,
-            limit,
-            total,
-            list: categories,
-        }
-    }
-    //
+  
     async get_catalogs({ request }: HttpContext) {
         let { page, limit, catalog_id, text, index, order_by, is_category_required } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         let query =

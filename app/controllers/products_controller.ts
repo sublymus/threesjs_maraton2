@@ -200,7 +200,7 @@ export default class ProductsController {
         if (text) {
             const like = `%${(text as string).split('').join('%')}%`;
             if ((text as string).startsWith('#')) {
-                query = query.andWhereLike('id', like);
+                query = query.andWhereLike('id', like.replaceAll('#',''));
             } else {
                 query = query.andWhere((q) => {
                     q.whereLike('id', like).orWhereLike('title', like).orWhereLike('description', like);

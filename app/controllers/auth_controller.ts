@@ -3,52 +3,45 @@ import User from "#models/user";
 import env from "#start/env";
 // import { create_user_validation } from "App/Validators/AuthValidator";
 import { v4 } from "uuid";
-import { createFiles } from './Tools/FileManager/CreateFiles.js';
-import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
-import hash from '@adonisjs/core/services/hash'
-
+import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
+import { limitation, paginate } from './Tools/Utils.js';
+import db from '@adonisjs/lucid/services/db';
 export default class AuthController {
 
     public async google_connexion({ ally }: HttpContext) {
         return ally.use("google").redirect();
     }
 
-    public async connexion({ request, auth }: HttpContext) {
-        const { email, password } = request.qs();
-
-        const user = await User.findBy('email', email);
-
-        if (!user) {
-            //? This is a security measure to prevent timing attacks.
-            await hash.use('scrypt').make('password')
-            return null
-        }
-
-        const hasValidPassword = await hash.verify(user.password, password)
-
-        if (!hasValidPassword) {
-            return null
-        }
-        
-        return {
-            ...user.$attributes,
-            photos:JSON.parse(user.photos||'[]'),
-            token: (await User.accessTokens.create(user)).value?.release(),
-        }
-    }
-
     public async disconnection({ auth }: HttpContext) {
-        // const user  = auth.user;
-        // const currentAccessToken = user?.currentAccessToken;
-        const getUser = auth.user?.id
-        const user = await User.findOrFail(getUser)
-        await User.accessTokens.delete(user, user.id)
+        const user = await auth.authenticate();
+        await User.accessTokens.delete(user, user.currentAccessToken.identifier);
         return {
-            disconnection: getUser,
+            disconnection: true
         };
     }
+    public async global_disconnection({ request, auth }: HttpContext) {
 
-    public async google_push_info({ ally, response, auth, request }: HttpContext) {
+        const { user_id } = request.qs()
+        const user = await auth.authenticate();
+        if (user_id /*&& admin / moderator*/) {
+            const tagetUser = await User.find(user_id);
+            if (!tagetUser) return 'user not found';
+            const tokens = await User.accessTokens.all(tagetUser);
+            for (const token of tokens) {
+                await User.accessTokens.delete(tagetUser, token.identifier);
+            }
+        } else {
+            const tokens = await User.accessTokens.all(user);
+            for (const token of tokens) {
+                await User.accessTokens.delete(user, token.identifier);
+            }
+        }
+        return {
+            disconnection: true,
+        }
+    }
+
+    public async google_push_info({ ally, response }: HttpContext) {
         const provider = ally.use('google');
 
         if (provider.accessDenied()) {
@@ -71,98 +64,106 @@ export default class AuthController {
         if (user) {
             return response
                 .redirect()
-                .toPath(`${env.get('FRONT_ORIGINE')}/#${env.get('FRONT_END_HOME')}=${
-                    JSON.stringify({
-                        token: (await User.accessTokens.create(user)).value?.release(),
-                    ...JSON.parse(JSON.stringify({
-                        ...user.$attributes,
-                        photos:JSON.parse(user.photos||'[]'),
-                    }))
-                    })
-                }`);
+                .toPath(`${env.get('FRONT_ORIGINE')}/auth#=${JSON.stringify({
+                    token: (await User.accessTokens.create(user)).value?.release(),
+                    ...User.ParseUser(user)
+                })
+                    }`);
         } else {
             const user_id = v4();
             const newUser = await User.create({
                 id: user_id,
                 email,
-                full_name: name,
+                name,
                 password: id,
-                photos: JSON.stringify([avatarUrl])
+                photos: JSON.stringify([avatarUrl]),
             })
             newUser.id = user_id;
             newUser.$attributes.id = user_id;
             //await _create_client( {name, email, password}, auth )
-            response.redirect().toPath(`${env.get('FRONT_ORIGINE')}/#${env.get('FRONT_END_HOME')}=${
-                    JSON.stringify({
-                        token: (await User.accessTokens.create(newUser)).value?.release(),
-                    ...JSON.parse(JSON.stringify({
-                        ...newUser.$attributes,
-                        photos:JSON.parse(newUser.photos||'[]'),
-                    }))
-                    })
+            response.redirect().toPath(`${env.get('FRONT_ORIGINE')}/auth#=${JSON.stringify({
+                token: (await User.accessTokens.create(newUser)).value?.release(),
+                ...JSON.parse(JSON.stringify({
+                    ...newUser.$attributes,
+                    photos: JSON.parse(newUser.photos || '[]'),
+                }))
+            })
                 }`);
         }
     }
 
-    public async create_client({ request, auth }: HttpContext) {
-        const { full_name, email, password } = request.body();
-        const id = v4();
-        const existingUser = await User.findBy("email", email);
-        if (existingUser) return "this email is already used ";
-        try {
-            const photos = await createFiles({
-                request,
-                column_name: "photos",
-                table_id: id,
-                table_name: "users",
-                options: {
-                    throwError: true,
-                    compress: 'img',
-                    min: 1,
-                    max: 1,
-                    extname: ["jpg", "jpeg", "webp", 'png'],
-                    maxSize: 12 * 1024 * 1024,
-                },
-            });
-            const user = await User.create({
-                id,
-                email,
-                full_name,
-                password,
-                photos: JSON.stringify(photos)
-            })
-            //await _create_client( {name, email, password}, auth )
-            user.id = id;
-            user.$attributes.id = id;
-            return {
-                ...user.$attributes,
-                photos:JSON.parse(user.photos||'[]'),
-                token: (await User.accessTokens.create(user)).value?.release(),
+
+    async me({ auth }: HttpContext) {
+        const user = await auth.authenticate()
+        const userAtt = User.ParseUser(user);
+
+        return {
+            ...userAtt,
+            token: user.currentAccessToken.value
+        };
+    }
+    async edit_me({ request, auth }: HttpContext) {
+        const body = request.body();
+        let urls: Record<string, string[]> = {};
+
+        const user = await auth.authenticate();
+
+        (['name', 'phone'] as const).forEach((attribute) => {
+            if (body[attribute]) user[attribute] = body[attribute];
+        });
+
+        for (const f of (['photos'] as const)) {
+            if (body[f]) {
+                urls[f] = await updateFiles({
+                    request,
+                    table_name: "users",
+                    table_id: user.id,
+                    column_name: f,
+                    lastUrls: user[f] || '[]',
+                    newPseudoUrls: body[f],
+                    options: {
+                        throwError: true,
+                        min: 1,
+                        max: 7,
+                        compress: 'img',
+                        extname: ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng', 'gif', "jpg", "png", "jpeg", "webp"],
+                        maxSize: 12 * 1024 * 1024,
+                    },
+                });
+                user[f] = JSON.stringify(urls[f]);
             }
-
-        } catch (error) {
-            console.log(error);
-
-            deleteFiles(id, 'photos');
+        }
+        await user.save();
+        return {
+            ...user.$attributes,
+            ...urls
         }
     }
 
-    public async create_provider() {
-
-    }
-    public async create_collaborator() {
-
-    }
-    public async create_engineer() {
-
-    }
-    public async create_service() {
-
-    }
+    async get_users({ request }: HttpContext) {
+        // moderator // admin
+        const { page, limit, name, email, phone, user_id, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
 
 
-    public async try_token() {
+        let query = db.query().from(User.table).select('*');
+        if (user_id) {
+            query = query.whereLike('id', `%${user_id}%`);
+        } else {
 
+            if (email) {
+                query = query.andWhereLike('phone', `%${email.split('').join('%')}%`);
+            }
+            if (phone) {
+                query = query.andWhereLike('phone', `%${phone.split('').join('%')}%`);
+            }
+            if (name) {
+                query = query.andWhereLike('phone', `%${name.split('').join('%')}%`);
+            }
+        }
+
+        const users = await limitation(query, page, limit, order_by);
+
+        return users.map(u => User.ParseUser(u));
     }
 }
 

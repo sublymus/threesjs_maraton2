@@ -20,7 +20,7 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   //////////////////  My ENV
   FRONT_ORIGINE: Env.schema.string(),
-  FRONT_END_HOME: Env.schema.string(),
+  FRONT_END_AUTH: Env.schema.string(),
   FRONT_END_REGISTER: Env.schema.string(),
   GOOGLE_CALLBACK: Env.schema.string(),
   GOOGLE: Env.schema.string(),
