@@ -9,7 +9,10 @@ export default class Role extends BaseModel {
   declare name: string
 
   @column()
-  declare store_id: string
+  declare context_table: string
+
+  @column()
+  declare context_id: string
 
   @column()
   declare filter_client: boolean

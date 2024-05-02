@@ -10,14 +10,14 @@ import { limitation, paginate } from './Tools/Utils.js';
 import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
+import UserStore from '#models/user_store';
+import User, { USER_STATUS, USER_TYPE } from '#models/user';
 
 export default class StoresController {
     async create_store({ request, auth }: HttpContext) {
         const { name, description, phone, website, store_email } = request.body();
         const existingStore = await Store.findBy('name', name);
 
-        console.log( { name, description, phone, website, store_email } );
-        
         if (existingStore) {
             return 'This Name is not Avalaible to use'
         }
@@ -54,37 +54,38 @@ export default class StoresController {
                 // address_id
                 // interface_id
             })
+            const user_store_id = v4();
+            await UserStore.create({
+                id: user_store_id,
+                user_id: user.id,
+                store_id: id,
+                type: USER_TYPE.OWNER
+            })
+
             return {
                 ...Store.ParseStore(store),
-                id
+                id,
             }
         } catch (error) {
             deleteFiles(id);
             console.log(error);
-            
+
             return error.message
         }
     }
-    async update_store({request, auth }: HttpContext) {
+    async update_store({ request, auth }: HttpContext) {
         const body = request.body();
-        
+
         const user = await auth.authenticate();
         const store = await Store.find(body.store_id);
-        
-        if(store?.owner_id != user.id) return 'Permission deined';
 
-        ['name','description','phone','website','store_email'].forEach((a => (store as any)[a]= body[a]));
-        let urls:any = []
+        if (store?.owner_id != user.id) return 'Permission deined';
+
+        ['name', 'description', 'phone', 'website', 'store_email'].forEach((a => (store as any)[a] = body[a]));
+        let urls: any = []
         for (const f of ['banners'] as const) {
             if (!body[f]) continue;
 
-            console.log('$$$$$$$$$$',{
-                table_id: store.id,
-                column_name: f,
-                lastUrls: store[f],
-                newPseudoUrls: body[f],
-            });
-            
             urls = await updateFiles({
                 request,
                 table_name: "stores",
@@ -104,13 +105,11 @@ export default class StoresController {
             store[f] = JSON.stringify(urls);
         }
         await store.save();
-        
+
         return Store.ParseStore(store);
     }
-    async get_store({ }: HttpContext) {
 
-    }
-    async get_stores({ request, auth }: HttpContext) {
+    async get_stores({ request }: HttpContext) {
         let { page, limit, name, email, description, owner_id, phone, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         // const user = await auth.authenticate();
         // if(user.type !=  USER_TYPE.MODERATOR) return;
@@ -136,24 +135,201 @@ export default class StoresController {
             query = query.andWhereLike('stores.description', like);
         }
         const stores = await limitation(query, page, limit, order_by)
-        return  stores.map(s=>Store.ParseStore(s))
-    }
-    async owner_stores({ request, auth }: HttpContext) {
-        const user = await auth.authenticate()
-        const stores = await db.query().from('stores').select('stores.*').where('owner_id', user.id)
-        return stores.map(s=>Store.ParseStore(s))
-    }
-    async delete_store({ request , auth}: HttpContext) {
-        const user = await auth.authenticate();
-        const store = await Store.findOrFail(request.param('id'));
-        if(store.owner_id !== user.id) return 'Permision denied'
-        await store.delete();
         return {
-            deleted:true,
+            list: ((await stores.query).map(s => Store.ParseStore(s))),
+            ...stores.paging
         }
     }
-    async get_store_var({ }: HttpContext) {
 
+    async owner_stores({ auth }: HttpContext) {
+        const user = await auth.authenticate();
+        const stores = await db.query().from('stores').select('stores.*').where('owner_id', user.id)
+        return stores.map(s => Store.ParseStore(s))
+    }
+
+    async get_store_collaborators({ request }: HttpContext) {
+        let { page, limit, name, email, user_id, phone, order_by, store_id, text, } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        // const user = await auth.authenticate();
+        // permision store_owner | store_collaborator | moderator | admin 
+        let query = db.query()
+            .from(UserStore.table)
+            .select('*')
+            .select('users.created_at as  created_at')
+            .select('user_stores.created_at as  join_at')
+            .innerJoin(User.table, 'user_id', 'users.id')
+            .where('store_id', store_id)
+        // .where('user_stores.type', USER_TYPE.COLLABORATOR);
+
+        if (user_id) {
+            query = query.whereLike('id', `%${user_id}%`);
+        } else {
+            if (text) {
+                const v = `%${text.split('').join('%')}%`
+                query = query.andWhere((q) => {
+                    q.whereLike('phone', v).orWhereLike('phone', v).orWhereLike('name', v)
+                });
+            } else {
+                if (email) {
+                    query = query.andWhereLike('email', `%${email.split('').join('%')}%`);
+                }
+                if (phone) {
+                    query = query.andWhereLike('phone', `%${phone.split('').join('%')}%`);
+                }
+                if (name) {
+                    query = query.andWhereLike('name', `%${name.split('').join('%')}%`);
+                }
+            }
+
+        }
+
+        const users = await limitation(query, page, limit, order_by)
+       
+        const r =  ((await users.query).map(u => User.ParseUser(u)));
+
+        console.log(r.length);
+        
+        
+        return {
+            list:r,
+            ...users.paging
+        }
+    }
+
+    async get_store_clients({ request, auth }: HttpContext) {
+        let { page, limit, name, email, user_id, phone, order_by, store_id, text, } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        // const user = await auth.authenticate();
+        // permision store_owner | store_collaborator | moderator | admin 
+        let query = db.query()
+            .from(UserStore.table)
+            .select('*')
+            .innerJoin(User.table, 'user_id', 'users.id')
+            .where('store_id', store_id)
+        // .where('user_stores.type', USER_TYPE.OWNER);
+
+        if (user_id) {
+            query = query.whereLike('id', `%${user_id}%`);
+        } else {
+            if (text) {
+                const v = `%${text.split('').join('%')}%`
+                query = query.andWhere((q) => {
+                    q.whereLike('phone', v).orWhereLike('phone', v).orWhereLike('name', v)
+                });
+            } else {
+                if (email) {
+                    query = query.andWhereLike('email', `%${email.split('').join('%')}%`);
+                }
+                if (phone) {
+                    query = query.andWhereLike('phone', `%${phone.split('').join('%')}%`);
+                }
+                if (name) {
+                    query = query.andWhereLike('name', `%${name.split('').join('%')}%`);
+                }
+            }
+
+        }
+
+        const users = await limitation(query, page, limit, order_by)
+
+        return {
+            list: ((await users.query).map(u => User.ParseUser(u))),
+            ...users.paging
+        }
+    }
+
+    async add_collaborator({ request, auth }: HttpContext) {
+        const { email, role_id, store_id } = request.body();
+
+        console.log(request.body());
+
+        const user = await auth.authenticate();
+        const user_store = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', store_id).whereNot((p) => p.where('type', 'CLIENT')))[0] as UserStore;
+        if (!user_store) return;
+
+        let collaborator = await User.findBy('email', email);
+      
+        let cid = '';
+        if (!collaborator) {
+            const collaborator_id = v4()
+            cid = collaborator_id;
+            collaborator = await User.create({
+                email,
+                id: collaborator_id,
+                name: 'new Collaborator',
+                password: collaborator_id,
+                photos: JSON.stringify(['/public/_user_img.png']),
+                status: USER_STATUS.NEW
+            });
+        } else {
+            cid = collaborator.id;
+            const c_store = (await db.query().from(UserStore.table).select('*').where('user_id', cid).andWhere('store_id', store_id).andWhere('type', USER_TYPE.COLLABORATOR))[0] as UserStore;
+            if (c_store) return console.log('Collaboratore is always here');
+    
+        }
+        const id = v4()
+        const userStore = await UserStore.create({
+            id,
+            roleId: role_id,
+            store_id: store_id,
+            user_id: cid,
+            type: USER_TYPE.COLLABORATOR,
+        });
+
+        return {
+            ...userStore.$attributes,
+            id
+        }
+    }
+    async remove_collaborator({ request, auth }: HttpContext) {
+        const { store_id, collaborator_id } = request.body();
+        console.log({ store_id, collaborator_id });
+
+        const user = await auth.authenticate();
+        const user_store = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', store_id).whereNot((p) => p.where('type', 'CLIENT')))[0] as UserStore;
+        if (!user_store) return console.log('user_store');
+        ;
+
+        const collaborator_store = (await db.query().from(UserStore.table).select('*').where('user_id', collaborator_id).andWhere('store_id', store_id).andWhere('type',USER_TYPE.COLLABORATOR))[0];
+        if (!collaborator_store) return console.log('collaborator_store');
+        if (collaborator_store.type == USER_TYPE.OWNER) return console.log('Owner connot be removed');
+
+        const clst = await UserStore.find(collaborator_store.id);
+        await clst?.delete();
+        console.log('delete');
+
+        return {
+            deleted: true
+        }
+    }
+    async can_manage_store({ request, auth }: HttpContext) {
+        const { att } = request.params();
+        const user = await auth.authenticate()
+        const store = (await db.query().from(Store.table).select('*').where('id', att).orWhere('name', att).limit(1))[0] as Store | undefined;
+        if (!store) return 'Store not found';
+        const userStore = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', store.id).andWhere((qr) => {
+            qr.where('type', USER_TYPE.OWNER).orWhere('type', USER_TYPE.COLLABORATOR)
+        }).limit(1))[0] as UserStore | undefined
+
+        return userStore && {
+            userStore,
+            user: {
+                ...User.ParseUser(user),
+                token: user.currentAccessToken.value
+            },
+            store: Store.ParseStore(store)
+        }
+    }
+
+    async delete_store({ request, auth }: HttpContext) {
+        const user = await auth.authenticate();
+        const store = await Store.findOrFail(request.param('id'));
+        if (store.owner_id !== user.id) return 'Permision denied'
+        await store.delete();
+        return {
+            deleted: true,
+        }
+    }
+
+    async get_store_var({ }: HttpContext) {
         const products = (await db.from(Product.table).count('id as count'))[0]?.count;
         const catalogs = (await db.from(Catalog.table).count('id as count'))[0]?.count;
         const categories = (await db.from(Category.table).count('id as count'))[0]?.count;
@@ -165,4 +341,6 @@ export default class StoresController {
             features
         }
     }
+
+
 }

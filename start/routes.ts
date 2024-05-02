@@ -61,13 +61,20 @@ router.put('/update_f_value', [FValueController,'update_f_value']);
 router.delete('/delete_f_value/:id', [FValueController,'delete_f_value']);
 //Store
 router.post('/create_store', [StoresController,'create_store']);
+router.post('/add_collaborator',[StoresController,'add_collaborator'])
 router.get('/get_store_var', [StoresController,'get_store_var']);
 router.get('/get_stores',[StoresController,'get_stores'])
 router.get('/owner_stores',[StoresController,'owner_stores'])
+router.get('/get_store_clients',[StoresController,'get_store_clients'])
+router.get('/get_store_collaborators',[StoresController,'get_store_collaborators'])
+router.get('/can_manage_store/:att',[StoresController,'can_manage_store'])
 router.put('/update_store',[StoresController,'update_store'])
 router.delete('/delete_store/:id',[StoresController,'delete_store'])
+router.delete('/remove_collaborator',[StoresController,'remove_collaborator'])
 //Role
+router.get('/get_store_roles', [RolesController,'get_store_roles']);
 router.get('/get_roles_json', [RolesController,'get_roles_json']);
+router.post('/create_collaborator_role', [RolesController,'create_collaborator_role']);
 
 
 

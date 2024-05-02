@@ -31,5 +31,12 @@ export async function limitation(query: DatabaseQueryBuilderContract<any>, page:
             query = query.orderBy(c, m);
         }
     }
-    return query;
+    return {
+        query,
+        paging:{
+            page,
+            total,
+            limit
+        }
+    };
 }

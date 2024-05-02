@@ -14,6 +14,9 @@ export enum USER_TYPE {
   MODERATOR = 'MODERATOR',
   ADMIN = 'ADMIN'
 }
+export enum USER_STATUS {
+  NEW = 'NEW',
+}
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -30,6 +33,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column()
   declare email: string
+
+  @column()
+  declare status: string
 
   @column()
   declare password: string

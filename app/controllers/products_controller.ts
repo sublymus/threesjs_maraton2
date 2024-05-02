@@ -135,7 +135,6 @@ export default class ProductsController {
         }
 
         await product.save()
-        console.log(product.$attributes);
 
         return product.$attributes;
     }
@@ -185,8 +184,7 @@ export default class ProductsController {
     }
 
     async get_products({ request }: HttpContext) {                               // price_desc price_asc date_desc date_asc
-        console.log(request.qs());
-
+    
         let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         let query = db.query().from(Product.table).select('*');
         if (category_id) {
@@ -250,7 +248,6 @@ export default class ProductsController {
                 list: fullProduct,
             };
         }
-
 
         return {
             page,

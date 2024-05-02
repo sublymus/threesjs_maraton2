@@ -1,5 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import User from "#models/user";
+import User, { USER_STATUS } from "#models/user";
 import env from "#start/env";
 // import { create_user_validation } from "App/Validators/AuthValidator";
 import { v4 } from "uuid";
@@ -62,13 +62,21 @@ export default class AuthController {
         const user = await User.findBy("email", email);
 
         if (user) {
+
+            if(user.status == USER_STATUS.NEW){
+                user.password = id;
+                user.photos = JSON.stringify([avatarUrl]);
+                user.name = name
+                await user.save();
+            }
+
             return response
                 .redirect()
                 .toPath(`${env.get('FRONT_ORIGINE')}/auth#=${JSON.stringify({
                     token: (await User.accessTokens.create(user)).value?.release(),
                     ...User.ParseUser(user)
                 })
-                    }`);
+            }`);
         } else {
             const user_id = v4();
             const newUser = await User.create({
@@ -163,7 +171,10 @@ export default class AuthController {
 
         const users = await limitation(query, page, limit, order_by);
 
-        return users.map(u => User.ParseUser(u));
+        return {
+            ...(users.paging),
+            list:(await users.query).map(u => User.ParseUser(u))
+        }
     }
 }
 
