@@ -25,7 +25,7 @@ export default class RolesController {
             query = query.andWhereLike('context_table', `%${context_table.split('').join('%')}%`);
         }
         if (context_table && context_id) {
-            query = query.andWhereLike('context_table', context_table).andWhere('context_id',context_id);
+            query = query.andWhereLike('context_table', context_table).andWhere('context_id', context_id);
         }
 
         if (name) {
@@ -36,14 +36,20 @@ export default class RolesController {
 
         return {
             ...roles.paging,
-            list: await roles.query
+            list: await roles.query,
         }
     }
     async create_collaborator_role({ request, auth }: HttpContext) {
         const body = request.body();
         const user = await auth.authenticate();
-        const user_store = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', body.store_id).whereNot((p)=>p.where('type','CLIENT')))[0] as UserStore;
+        const user_store = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', body.store_id).whereNot((p) => p.where('type', 'CLIENT')))[0] as UserStore;
         if (!user_store) return;
+
+        const _role = (await db.query().from(Role.table).where('context_id', body.store_id).andWhere('name', body.name).limit(1))[0]
+        if (_role) {
+            return console.log('Role "' + _role.name + '" Exist');
+        }
+
         const a: any = {};
         Object.keys(JsonRole).forEach((k) => body[k] ? a[k] = true : 0)
         const id = v4();
@@ -57,10 +63,12 @@ export default class RolesController {
 
         return {
             ...role.$attributes,
+            created_at: role.createdAt,
+            updated_at: role.updatedAt,
             id
         }
     }
-    async create_moderator_role({  }: HttpContext) {
+    async create_moderator_role({ }: HttpContext) {
         // const user = auth.authenticate();
         // const body = request.body();
         // console.log(body);
@@ -83,7 +91,23 @@ export default class RolesController {
         //     id
         // }
     }
-    async update_role({ }: HttpContext) {
+    async update_role({ request }: HttpContext) {
+        const body = request.body();
+        if (!body.role_id) return;
+
+        const role = await Role.find(body.role_id);
+        if (!role) return 'Role not found'
+        if (body.newOptions) {
+            Object.keys(JsonRole).forEach(t => ((role as any)[t] = !!body[t]))
+        }
+
+        if (body.name) role.name = body.name
+
+        await role.save();
+
+        console.log(role.$attributes);
+
+        return role.$attributes
 
     }
     async get_role({ }: HttpContext) {
@@ -92,7 +116,17 @@ export default class RolesController {
     async get_roles({ }: HttpContext) {
 
     }
-    async delete_role({ }: HttpContext) {
-
+    async delete_role({ request, auth }: HttpContext) {
+        const { role_id, store_id } = request.body();
+       if(!role_id || ! store_id) return 
+        const user = await auth.authenticate();
+        const user_store = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', store_id).whereNot((p)=>p.where('type','CLIENT')))[0] as UserStore;
+        if (!user_store) return;
+        const role = await Role.find(role_id);
+        if(!role) return 'role not Found'
+        await role?.delete();
+        return {
+            deleted : true
+        }
     }
 }

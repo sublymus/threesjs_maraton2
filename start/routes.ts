@@ -72,10 +72,11 @@ router.put('/update_store',[StoresController,'update_store'])
 router.delete('/delete_store/:id',[StoresController,'delete_store'])
 router.delete('/remove_collaborator',[StoresController,'remove_collaborator'])
 //Role
+router.post('/create_collaborator_role', [RolesController,'create_collaborator_role']);
 router.get('/get_store_roles', [RolesController,'get_store_roles']);
 router.get('/get_roles_json', [RolesController,'get_roles_json']);
-router.post('/create_collaborator_role', [RolesController,'create_collaborator_role']);
-
+router.put('/update_role', [RolesController,'update_role']);
+router.delete('/delete_role',[RolesController,'delete_role'])
 
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`,({params,response})=>{

@@ -61,7 +61,7 @@ export default class Role extends BaseModel {
 }
 
 export const JsonRole = {
-  filter_flient: '',
+  filter_client: '',
   ban_client: '',
   filter_collaborator: '',
   ban_collaborator: '',
