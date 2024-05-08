@@ -68,7 +68,10 @@ export default class UserStore extends BaseModel {
   public static async  isStoreManagerOrMore(user_id:string, store_id?:string, premision?:Partial<TypeJsonRole>){
     if(store_id){
       const u =  await UserStore.isStoreManager(user_id , store_id);
-      if(u) return u
+      if(u){
+        console.log(u.type);
+        return u
+      }
     }
     return await UserStore.isSublymusManager(user_id);
   }

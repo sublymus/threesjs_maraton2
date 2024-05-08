@@ -35,9 +35,7 @@ router.put('/update_view_catalog', [CatalogsController,'update_view_catalog']);
 router.delete('/delete_catalog/:id', [CatalogsController,'delete_catalog']);
 //Category
 router.post('/create_category', [CategoriesController,'create_category']);
-router.get('/get_category/:id', [CategoriesController,'get_category']);
 router.get('/get_categories', [CategoriesController,'get_categories']);
-router.get('/get_category_products', [CategoriesController,'get_category_products']);
 router.put('/update_category', [CategoriesController,'update_category']);
 router.put('/update_view_category', [CategoriesController,'update_view_category']);
 router.delete('/delete_category/:id', [CategoriesController,'delete_category']);

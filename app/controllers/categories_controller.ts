@@ -6,11 +6,25 @@ import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import { paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import Product from '#models/product';
+import UserStore from '#models/user_store';
+import Catalog from '#models/catalog';
+import User from '#models/user';
 
 export default class CategoriesController {
 
-    async create_category({ request }: HttpContext) {
+    async create_category({ request, auth }: HttpContext) {
         const { label, index, description, catalog_id } = request.body();
+
+        const user = await auth.authenticate()
+        const catalog = await Catalog.find(catalog_id);
+
+        if (!catalog) throw new Error("Catalog Not Found");
+
+        if (!await UserStore.isStoreManagerOrMore(user.id, catalog.store_id)) throw new Error('Permison Required')
+
+        const existCategoryg = (await db.from(Category.table).where('label', label).andWhere('store_id', catalog.store_id).limit(1))[0];
+        if (existCategoryg) throw new Error('This Category Exist on Your Store');
+
         const category_id = v4();
         const category = await Category.create({
             id: category_id,
@@ -18,18 +32,21 @@ export default class CategoriesController {
             index,
             catalog_id,
             description,
-            status:Product.STATUS.PAUSE,
+            store_id: catalog.store_id,
+            status: Product.STATUS.PAUSE,
         })
         category.id = category_id;
         return category.$attributes
     }
 
-    async update_category({ request }: HttpContext) {
+    async update_category({ request, auth }: HttpContext) {
         const body = request.body();
-        console.log(body.category_id);
 
         const category = await Category.find(body.category_id);
         if (!category) return 'category not found';
+
+        const user = await auth.authenticate()
+        if (!await UserStore.isStoreManagerOrMore(user.id, category.store_id)) throw new Error('Permison Required');
 
         ['label', 'index', 'status', 'catalog_id', 'description'].forEach((attribute) => {
             //@ts-ignore
@@ -40,21 +57,20 @@ export default class CategoriesController {
             delete body.status;
         }
         await category.save();
-        console.log(category.$attributes);
 
         return category.$attributes
     }
 
-    async update_view_category({ request }: HttpContext) {
+    async update_view_category({ request, auth }: HttpContext) {
         const { category_id, scene_dir } = request.body();
 
         const category = await Category.find(category_id);
 
-        if (!category) return "ERROR category not found";
+        if (!category) throw new Error("ERROR category not found");
 
-        // if (category.account_id !== access.auth_table_id) {
-        //   return "ERROR Permission denied";
-        // }
+        const user = await auth.authenticate()
+        if (!await UserStore.isStoreManagerOrMore(user.id, category.store_id)) throw new Error('Permison Required')
+
         const file = request.file('scene_dir');
         let url;
         if (file) {
@@ -78,48 +94,33 @@ export default class CategoriesController {
         return category.$attributes;
     }
 
-    async get_category({ request }: HttpContext) {
-        const category_id = request.param('id');
-        const category = await Category.find(category_id);
-        if (!category) return "ERROR category not found";
-        return category.$attributes
-    }
-
-    async get_category_products({ request }: HttpContext) {
-        let { page, limit, category_id, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined, catalog_id: string } & { [k: string]: any });
-        let query = db.query().from(Product.table).select('products.*').where('category_id', category_id || '');
-        if (order_by) {
-            const o = (order_by as string)
-            const c = o.substring(0, o.lastIndexOf('_'));
-            const m = o.substring(o.lastIndexOf('_') + 1, o.length) as any;
-            query = query.orderBy(c, m);
-        }
-        let total = (await query).length;
-        let pages = Math.ceil(total / limit);
-        page = Math.max(pages < page ? pages : page, 1);
-
-        query = query.limit(limit).offset((page - 1) * limit);
-        const products = await query;
-        return {
-            page,
-            limit,
-            total,
-            list: products.map(p => Product.clientProduct(p)),
-        }
-    }
-    async get_categories({ request }: HttpContext) {
-        let { page, limit, catalog_id, index, text, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined, catalog_id: string } & { [k: string]: any });
+    async get_categories({ request, auth }: HttpContext) {
+        let { page, limit, catalog_id, index, text, order_by, all_status, store_id } = paginate(request.qs() as { page: number | undefined, limit: number | undefined, catalog_id: string } & { [k: string]: any });
         let query = db.query().from(Category.table).select('categories.*').count('products.id', 'total_products').leftJoin('products', 'products.category_id', 'categories.id').groupBy('categories.id');
+
+        let user: User | undefined;
+        if (!store_id) {
+            !user && (user = await auth.authenticate())
+            if (!await UserStore.isSublymusManager(user.id)) throw new Error('Sublymus Permison Required')
+        } else {
+            query = query.where('categories.store_id', store_id);
+        }
+        if (all_status) {
+            !user && (user = await auth.authenticate());
+            if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error('Sublymus Permison Required')
+        } else {
+            query.andWhere('categories.status', Product.STATUS.VISIBLE)
+        }
         if (catalog_id) {
-            query = query.where('catalog_id', catalog_id);
+            query = query.andWhere('catalog_id', catalog_id);
         }
         if (text) {
             const like = `%${(text as string).split('').join('%')}%`;
             if ((text as string).startsWith('#')) {
-                query = query.andWhereLike('id', like);
+                query = query.andWhereLike('categories.id', like.replace('#',''));
             } else {
                 query = query.andWhere((q) => {
-                    q.whereLike('categories.id', like).orWhereLike('label', like).orWhereLike('categories.description', like);
+                    q.whereLike('categories.id', like).orWhereLike('categories.label', like).orWhereLike('categories.description', like);
                 });
             }
         }
@@ -144,8 +145,15 @@ export default class CategoriesController {
         }
     }
 
-    async delete_category({ request }: HttpContext) {
+    async delete_category({ request , auth }: HttpContext) {
         const category_id = request.param('id');
+        
+        const category = await Category.find(category_id);
+        if (!category) return 'Category not found';
+
+        const user = await auth.authenticate()
+        if (!await UserStore.isStoreManagerOrMore(user.id, category.store_id)) throw new Error('Permison Required')
+
         await deleteFiles(category_id);
         await db.rawQuery('delete from `categories` where `id` = :id;', { id: category_id });
         return {
