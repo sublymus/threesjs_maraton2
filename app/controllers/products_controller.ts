@@ -67,12 +67,15 @@ export default class ProductsController {
                 price,
                 collaborator_id: v4(),
                 store_id: v4(),
+                keywords:'noga'
                 // action:`{${new Date().toISOString()},name:'creation','message'}`
             })
             product.id = product_id;
             const features = await FeaturesController._get_features_of_product({ product_id });
             return Product.clientProduct(product, { features });
         } catch (error) {
+            console.log(error);
+            
             await deleteFiles(product_id);
         }
     }
@@ -136,7 +139,7 @@ export default class ProductsController {
 
         await product.save()
 
-        return product.$attributes;
+        return Product.clientProduct(product);
     }
 
 
@@ -165,8 +168,7 @@ export default class ProductsController {
 
         product.scene_dir = url;
         await product.save();
-        const rest = product.$attributes
-        return rest
+        return Product.clientProduct(product);
     }
     async get_product({ request }: HttpContext) {
         const id: string = request.param('id');
@@ -185,8 +187,9 @@ export default class ProductsController {
 
     async get_products({ request }: HttpContext) {                               // price_desc price_asc date_desc date_asc
     
-        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required , all_status } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         let query = db.query().from(Product.table).select('*');
+        
         if (category_id) {
             query = query.where('category_id', category_id);
         }

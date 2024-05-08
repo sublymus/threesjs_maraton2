@@ -40,3 +40,8 @@ export async function limitation(query: DatabaseQueryBuilderContract<any>, page:
         }
     };
 }
+
+export enum ERROR {
+    PERMISION_REQUIRED,
+    NOT_FOUND,
+}

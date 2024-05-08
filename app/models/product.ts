@@ -34,6 +34,8 @@ export default class Product extends BaseModel {
   declare stock: number  
   
   @column()
+  declare keywords : string
+  @column()
   declare category_id: string  
   
   @column()
@@ -66,10 +68,11 @@ export default class Product extends BaseModel {
   }
 
   public static clientProduct(product : Product , addon? : Record<string,any>){
-    const att ={... JSON.parse(JSON.stringify(product))};
+    const att  = product.$attributes||product;
     ['images','model_images'].forEach(f => {
       try {
-        att[f] = JSON.parse(att[f]||"[]");
+        if(typeof att[f] == 'string') att[f] = JSON.parse(att[f]||"[]");
+        else att[f] = []
       } catch (error) {
         att[f] = []
       }

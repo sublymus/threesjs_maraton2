@@ -13,6 +13,7 @@ export default class extends BaseSchema {
       table.integer('price').notNullable();
       table.uuid('payment_id') // payment mode |catre | crypto   ---   servive |leamonskizi| criptoblabla  -------
       table.string('delivery_address')
+      table.uuid('store_id').notNullable().references('id').inTable('stores');
       
       table.timestamp('created_at')
       table.timestamp('updated_at')

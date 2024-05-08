@@ -64,6 +64,9 @@ export default class Feature extends BaseModel {
   @column()
   declare values : string
   
+  @column()
+  declare store_id: string
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

@@ -66,7 +66,8 @@ export default class AuthController {
             if(user.status == USER_STATUS.NEW){
                 user.password = id;
                 user.photos = JSON.stringify([avatarUrl]);
-                user.name = name
+                user.name = name;
+                user.status = USER_STATUS.VISIBLE
                 await user.save();
             }
 

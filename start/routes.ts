@@ -29,9 +29,7 @@ router.put('/update_view_product', [ProductsController,'update_view_product']);
 router.delete('/delete_product/:id', [ProductsController,'delete_product']);
 //Catlog
 router.post('/create_catalog', [CatalogsController,'create_catalog']);
-router.get('/get_catalog/:id', [CatalogsController,'get_catalog']);
 router.get('/get_catalogs', [CatalogsController,'get_catalogs']);
-router.get('/get_catalog_products', [CatalogsController,'get_catalog_products']);
 router.put('/update_catalog', [CatalogsController,'update_catalog']);
 router.put('/update_view_catalog', [CatalogsController,'update_view_catalog']);
 router.delete('/delete_catalog/:id', [CatalogsController,'delete_catalog']);
@@ -63,16 +61,19 @@ router.delete('/delete_f_value/:id', [FValueController,'delete_f_value']);
 router.post('/create_store', [StoresController,'create_store']);
 router.post('/add_collaborator',[StoresController,'add_collaborator'])
 router.get('/get_store_var', [StoresController,'get_store_var']);
+router.get('/get_users_var', [StoresController,'get_users_var']);
 router.get('/get_stores',[StoresController,'get_stores'])
 router.get('/owner_stores',[StoresController,'owner_stores'])
 router.get('/get_store_clients',[StoresController,'get_store_clients'])
 router.get('/get_store_collaborators',[StoresController,'get_store_collaborators'])
 router.get('/can_manage_store/:att',[StoresController,'can_manage_store'])
+router.get('/can_use_store/:att',[StoresController,'can_use_store'])
 router.put('/update_store',[StoresController,'update_store'])
 router.delete('/delete_store/:id',[StoresController,'delete_store'])
 router.delete('/remove_collaborator',[StoresController,'remove_collaborator'])
 //Role
 router.post('/create_collaborator_role', [RolesController,'create_collaborator_role']);
+router.put('/change_collaborator_role', [RolesController,'change_collaborator_role']);
 router.get('/get_store_roles', [RolesController,'get_store_roles']);
 router.get('/get_roles_json', [RolesController,'get_roles_json']);
 router.put('/update_role', [RolesController,'update_role']);

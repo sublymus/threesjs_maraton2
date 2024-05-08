@@ -21,6 +21,9 @@ export default class Catalog extends BaseModel {
   @column()
   declare status: string
 
+  @column()
+  declare store_id: string
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

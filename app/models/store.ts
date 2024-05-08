@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
+import { v4 } from 'uuid'
 
 export default class Store extends BaseModel {
   @column({ isPrimary: true })
@@ -37,6 +38,11 @@ export default class Store extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @beforeSave()
+  public static async setUUID (store: Store) {
+   if(!store.id)store.id = v4()
+  }
 
   public static ParseStore(store: Store) {
     const att: any = {};

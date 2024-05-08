@@ -16,6 +16,7 @@ export enum USER_TYPE {
 }
 export enum USER_STATUS {
   NEW = 'NEW',
+  VISIBLE = 'VISIBLE'
 }
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
@@ -55,6 +56,11 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+
+  @beforeSave()
+  public static async setUUID (user: User) {
+   if(!user.id)user.id = v4()
+  }
 
   public static ParseUser(user: User) {
     let photos = [];

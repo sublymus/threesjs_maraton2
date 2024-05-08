@@ -11,6 +11,7 @@ export default class extends BaseSchema {
       table.string('description').notNullable();
       table.uuid('catalog_id').notNullable().references('id').inTable('catalogs');
       table.string('scene_dir');
+      table.uuid('store_id').notNullable().references('id').inTable('stores');
       
       table.smallint('index').notNullable();
       table.string('status').notNullable();

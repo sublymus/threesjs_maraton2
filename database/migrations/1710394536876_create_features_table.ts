@@ -26,6 +26,7 @@ export default class extends BaseSchema {
       table.string('max_size');
       table.string('mime');
       table.string('ext'); // //tableau json string[]
+      table.uuid('store_id').notNullable().references('id').inTable('stores');
       
       table.timestamp('created_at')
       table.timestamp('updated_at')

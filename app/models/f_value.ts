@@ -30,6 +30,9 @@ export default class FValue extends BaseModel {
   @column()
   declare value: string;
 
+  @column()
+  declare store_id: string
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
+import { v4 } from 'uuid'
 
 export default class Role extends BaseModel {
   @column({ isPrimary: true })
@@ -9,10 +10,7 @@ export default class Role extends BaseModel {
   declare name: string
 
   @column()
-  declare context_table: string
-
-  @column()
-  declare context_id: string
+  declare store_id: string
 
   @column()
   declare filter_client: boolean
@@ -58,6 +56,11 @@ export default class Role extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @beforeSave()
+  public static async setUUID (role: Role) {
+   if(!role.id)role.id = v4()
+  }
 }
 
 export const JsonRole = {

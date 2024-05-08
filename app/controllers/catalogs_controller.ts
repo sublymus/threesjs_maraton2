@@ -4,13 +4,22 @@ import { v4 } from 'uuid';
 import { unZipDir } from './Tools/ZipManager/unZipDir.js';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import db from '@adonisjs/lucid/services/db'
-import { paginate } from './Tools/Utils.js';
+import { limitation, paginate } from './Tools/Utils.js';
 import Product from '#models/product';
-
+import Store from '#models/store';
+import UserStore from '#models/user_store';
+import User, { USER_STATUS } from '#models/user';
 export default class CatalogsController {
 
-    async create_catalog({ request }: HttpContext) {
-        const { label, index, description } = request.body();
+    async create_catalog({ request , auth }: HttpContext) {
+        const { label, index, description , store_id} = request.body();
+       console.log(label, index, description , store_id);
+       
+        const user = await auth.authenticate()
+       if(!await UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error('Permison Required')
+       
+       const existCatalog =( await db.from(Catalog.table).where('label',label).andWhere('store_id',store_id).limit(1))[0];
+       if(existCatalog) throw new Error('This Catalog Exist on Your Store');
 
         const catalog_id = v4();
         const catalog = await Catalog.create({
@@ -18,52 +27,49 @@ export default class CatalogsController {
             label,
             index,
             description,
+            store_id,
             status: Product.STATUS.PAUSE,
         })
         catalog.id = catalog_id;
-        console.log('new', catalog.$attributes);
 
         return catalog.$attributes
     }
 
-    async update_catalog({ request }: HttpContext) {
+    async update_catalog({ request , auth }: HttpContext) {
         const body = request.body();
-        console.log(body);
         
-        const attributes = ['label', 'status', 'index', 'description'] as const;
-
+        const catalog = await Catalog.find(body.catalog_id);
+        if (!catalog) throw new Error('Catalog not found');
+        
+        const user = await auth.authenticate()
+        if(!await UserStore.isStoreManagerOrMore(user.id, catalog.store_id)) throw new Error('Permison Required')
+    
+        //V
         if (body.status && !Object.values(Product.STATUS).includes(body.status)) {
             delete body.status;
         }
 
-        const catalog = await Catalog.find(body.catalog_id);
-        if (!catalog) return 'Catalog not found';
-        attributes.forEach((attribute) => {
-            //@ts-ignore
-            if (body[attribute]) catalog[attribute] = body[attribute];
+       
+        (['label', 'status', 'index', 'description']).forEach((a) => {
+            if (body[a]) (catalog as any)[a] = body[a];
         });
         await catalog.save();
-        console.log(catalog);
 
         return catalog.$attributes
     }
 
-    async update_view_catalog({ request }: HttpContext) {
-        const { catalog_id } = request.body();
-        console.log({ catalog_id });
-
+    async update_view_catalog({ request, auth }: HttpContext) {
+        const { catalog_id} = request.body();
+          
         const catalog = await Catalog.findBy("id", catalog_id);
-
-        if (!catalog) {
-            return "ERROR catalog not found";
-        }
-        // if (catalog.account_id !== access.auth_table_id) {
-        //   return "ERROR Permission denied";
-        // }
-
+        if (!catalog) throw new Error( "ERROR catalog not found");
+        
+        const user = await auth.authenticate()
+        if(!await UserStore.isStoreManagerOrMore(user.id, catalog.store_id)) throw new Error('Permison Required')
+        
         const file = request.file('scene_dir');
-        if (!file) return "scene_dir file not found";
-
+        if (!file) throw new Error("scene_dir file not found");
+    
         let url = await unZipDir({
             file: file,
             table_name: Catalog.table,
@@ -76,37 +82,9 @@ export default class CatalogsController {
         return catalog.$attributes;
     }
 
-    async get_catalog({ request }: HttpContext) {
-        const catalog_id = request.param('id');
-        const catalog = await Catalog.find(catalog_id);
-        if (!catalog) return 'Catalog not found';
-        return catalog.$attributes
-    }
-
-    async get_catalog_products({ request }: HttpContext) {
-        let { catalog_id, page, limit } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
-        if (!catalog_id) return 'Catalog not found'
-        let query = db.query().from(Product.table).whereIn('category_id', (query) => {
-            query.from('categories').select('id').where('catalog_id', catalog_id);
-        })
-        let total = (await query).length;
-        let pages = Math.ceil(total / limit);
-        page = Math.max(pages < page ? pages : page, 1);
-
-        query = query.limit(limit).offset((page - 1) * limit);
-        const products = await query;
-        console.log({ catalog_id, total, products });
-
-        return {
-            page,
-            limit,
-            total,
-            list: products.map(p => Product.clientProduct(p)),
-        }
-    }
-  
-    async get_catalogs({ request }: HttpContext) {
-        let { page, limit, catalog_id, text, index, order_by, is_category_required } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+    async get_catalogs({ request , auth}: HttpContext) {
+        let { page, limit, catalog_id, text, index, order_by, is_category_required ,all_status, store_id} = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+       
         let query =
             db.query()
                 .from(db.from('categories')
@@ -120,21 +98,28 @@ export default class CatalogsController {
                 .select('catalogs.*')
                 .sum('nbr_product as total_product')
                 .groupBy('catalogs.id')
-        /*
-         .from(Catalog.table).from(
-            db.from('categories')
-            .select('catalog_id')
-            .count('products.id as nbr_product')
-            .leftJoin('products','products.category_id','categories.id')
-            .groupBy('categories.id')
-        )
-        .select('*')
-        .sum('nbr_product as total_product')
-        .whereColumn('catalog_id','catalogs.id')
-        .groupBy('catalogs.id')
-        */
+        let user: User|undefined;
+        if(!store_id){
+            !user && (user = await auth.authenticate())
+            if(!await UserStore.isSublymusManager(user.id)){
+                console.log('*****');
+                throw new Error('Sublymus Permison Required')
+                
+            }
+        }else{
+            query = query.where('store_id',store_id);
+        }
+        if(all_status){
+            !user && (user = await auth.authenticate());
+            if(!await UserStore.isStoreManagerOrMore(user.id, store_id)){
+
+            }
+        }else{
+            query.andWhere('catalogs.status',Product.STATUS.VISIBLE)
+        }
+        
         if (catalog_id) {
-            query = query.where('id', catalog_id);
+            query = query.andWhere('id', catalog_id);
         }
         if (text) {
             const like = `%${(text as string).split('').join('%')}%`;
@@ -149,17 +134,9 @@ export default class CatalogsController {
         if (index) {
             query = query.andWhere('index', index);
         }
-        if (order_by) {
-            const o = (order_by as string)
-            const c = o.substring(0, o.lastIndexOf('_'));
-            const m = o.substring(o.lastIndexOf('_') + 1, o.length) as any;
-            query = query.orderBy(c, m);
-        }
-        let total = Math.max((await query).length, 1);
-        let pages = Math.ceil(total / limit);
-        page = pages < page ? pages : page;
-        query = query.limit(limit).offset((page - 1) * limit)
-        const catalogs = await query
+        
+        const q_catalogs = await limitation(query, page, limit, order_by)
+        const catalogs = await q_catalogs.query
 
         if (is_category_required) {
             const promises = catalogs.map((catalog) => new Promise(async (rev) => {
@@ -176,26 +153,28 @@ export default class CatalogsController {
             }))
             const fullCatalog = (await Promise.allSettled(promises)).map(m => (m as any).value)
             return {
-                page,
-                limit,
-                total,
+               ...q_catalogs.paging,
                 list: fullCatalog
             }
         }
         return {
-            page,
-            limit,
-            total,
+            ...q_catalogs.paging,
             list: catalogs,
         }
     }
 
-    async delete_catalog({ request }: HttpContext) {
+    async delete_catalog({ request, auth }: HttpContext) {
         const catalog_id = request.param('id');
+
         const catalog = await Catalog.find(catalog_id);
-        await deleteFiles(catalog_id);
         if (!catalog) return 'Catalog not found';
+
+        const user = await auth.authenticate()
+        if(!await UserStore.isStoreManagerOrMore(user.id, catalog.store_id)) throw new Error('Permison Required')
+        
+        await deleteFiles(catalog_id);
         await catalog.delete();
+        
         return {
             isDeleted: true,
         }
