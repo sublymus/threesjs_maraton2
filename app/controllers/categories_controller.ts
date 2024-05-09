@@ -3,7 +3,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { v4 } from 'uuid';
 import { unZipDir } from './Tools/ZipManager/unZipDir.js';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
-import { paginate } from './Tools/Utils.js';
+import { limitation, paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import Product from '#models/product';
 import UserStore from '#models/user_store';
@@ -23,7 +23,7 @@ export default class CategoriesController {
         if (!await UserStore.isStoreManagerOrMore(user.id, catalog.store_id)) throw new Error('Permison Required')
 
         const existCategoryg = (await db.from(Category.table).where('label', label).andWhere('store_id', catalog.store_id).limit(1))[0];
-        if (existCategoryg) throw new Error('This Category Exist on Your Store');
+        if (existCategoryg) throw new Error('Category Exist on Your Store, with the same name');
 
         const category_id = v4();
         const category = await Category.create({
@@ -111,13 +111,14 @@ export default class CategoriesController {
         } else {
             query.andWhere('categories.status', Product.STATUS.VISIBLE)
         }
+        
         if (catalog_id) {
             query = query.andWhere('catalog_id', catalog_id);
         }
         if (text) {
             const like = `%${(text as string).split('').join('%')}%`;
             if ((text as string).startsWith('#')) {
-                query = query.andWhereLike('categories.id', like.replace('#',''));
+                query = query.andWhereLike('categories.id', like.replace('#', ''));
             } else {
                 query = query.andWhere((q) => {
                     q.whereLike('categories.id', like).orWhereLike('categories.label', like).orWhereLike('categories.description', like);
@@ -127,27 +128,18 @@ export default class CategoriesController {
         if (index) {
             query = query.andWhere('index', index);
         }
-        if (order_by) {
-            const o = (order_by as string)
-            const c = o.substring(0, o.lastIndexOf('_'));
-            const m = o.substring(o.lastIndexOf('_') + 1, o.length) as any;
-            query = query.orderBy(c, m);
-        }
-        let total = Math.max((await query).length, 1);
-        let pages = Math.ceil(total / limit);
-        page = pages < page ? pages : page;
-        query = query.limit(limit).offset((page - 1) * limit);
+
+        const c = await limitation(query, page, limit, order_by)
+
         return {
-            page,
-            limit,
-            total,
-            list: await query
+            ...c.paging,
+            list: await c.query
         }
     }
 
-    async delete_category({ request , auth }: HttpContext) {
+    async delete_category({ request, auth }: HttpContext) {
         const category_id = request.param('id');
-        
+
         const category = await Category.find(category_id);
         if (!category) return 'Category not found';
 
@@ -156,6 +148,7 @@ export default class CategoriesController {
 
         await deleteFiles(category_id);
         await db.rawQuery('delete from `categories` where `id` = :id;', { id: category_id });
+
         return {
             isDeleted: true,
         }

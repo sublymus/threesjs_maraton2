@@ -5,15 +5,28 @@ import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
 import { unZipDir } from './Tools/ZipManager/unZipDir.js';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
-import { paginate } from './Tools/Utils.js';
+import { limitation, paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import PivotProductsFeature from '#models/pivot_products_feature';
 import FeaturesController from './features_controller.js';
+import UserStore from '#models/user_store';
+import Category from '#models/category';
+import User from '#models/user';
 
 let i = 0;
 export default class ProductsController {
-    async create_product({ request }: HttpContext) {
+    async create_product({ request , auth}: HttpContext) {
         const { title, description, features_id, price, stock, category_id, is_dynamic_price } = request.body();
+        
+        const category =  await Category.find(category_id);
+        if(!category) throw new Error("Category not found");
+        
+        const user = await auth.authenticate()
+        if (!await UserStore.isStoreManagerOrMore(user.id, category.store_id)) throw new Error('Permison Required')
+
+        const existProduct = (await db.from(Product.table).where('title', title).andWhere('store_id', category.store_id).limit(1))[0];
+        if (existProduct) throw new Error('Product Exist on Your Store, with the same name');
+
         const product_id = v4();
         const imagesUrl = await createFiles({
             request,
@@ -66,9 +79,8 @@ export default class ProductsController {
                 category_id,
                 price,
                 collaborator_id: v4(),
-                store_id: v4(),
+                store_id: category.store_id,
                 keywords:'noga'
-                // action:`{${new Date().toISOString()},name:'creation','message'}`
             })
             product.id = product_id;
             const features = await FeaturesController._get_features_of_product({ product_id });
@@ -79,27 +91,18 @@ export default class ProductsController {
             await deleteFiles(product_id);
         }
     }
-    /*
-    UserAction{
-        date:yyyy-mm-ddThh-mm-ss
-        name:string
-        message:string
-    }
-    
-    */
 
-
-    async update_product({ request }: HttpContext) {
+    async update_product({ request, auth }: HttpContext) {
         const body = request.body();
+        
         const product = await Product.findBy("id", body.product_id);
-
         if (!product) {
             return "ERROR Product not found";
         }
-        if( body.status &&  !Object.values(Product.STATUS).includes(body.status)) {
-          delete body.status;
-        }
-        
+
+        const user = await auth.authenticate()
+        if (!await UserStore.isStoreManagerOrMore(user.id, product.store_id)) throw new Error('Permison Required');
+
         ([
             'title',
             'description',
@@ -143,16 +146,15 @@ export default class ProductsController {
     }
 
 
-    async update_view_product({ request }: HttpContext) {
+    async update_view_product({ request, auth }: HttpContext) {
         const body = request.body();
         const product = await Product.findBy("id", body.product_id);
-
         if (!product) {
             return "ERROR Product not found";
         }
-        // if (product.account_id !== access.auth_table_id) {
-        //   return "ERROR Permission denied";
-        // }
+        const user = await auth.authenticate()
+        if (!await UserStore.isStoreManagerOrMore(user.id, product.store_id)) throw new Error('Permison Required');
+
         const file = request.file('scene_dir');
         if (!file) return "scene_dir file not found";
 
@@ -170,26 +172,27 @@ export default class ProductsController {
         await product.save();
         return Product.clientProduct(product);
     }
-    async get_product({ request }: HttpContext) {
-        const id: string = request.param('id');
-        const product = await Product.find(id);
-        if (!product) return "ERROR Product not found";
 
-        return product.$attributes;
-    }
 
-    async detail_product({ request }: HttpContext) {
-        const id: string = request.param('id');
-        const product = await Product.find(id);
-        if (!product) return "ERROR Product not found";
-        return product.$attributes;
-    }
-
-    async get_products({ request }: HttpContext) {                               // price_desc price_asc date_desc date_asc
+    async get_products({ request , auth}: HttpContext) {                               // price_desc price_asc date_desc date_asc
     
-        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required , all_status } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required , all_status, store_id  } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         let query = db.query().from(Product.table).select('*');
         
+        let user: User | undefined;
+        if (!store_id) {
+            !user && (user = await auth.authenticate())
+            if (!await UserStore.isSublymusManager(user.id)) throw new Error('Sublymus Permison Required')
+        } else {
+            query = query.where('store_id', store_id);
+        }
+        if (all_status) {
+            !user && (user = await auth.authenticate());
+            if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error('Sublymus Permison Required')
+        } else {
+            query.andWhere('products.status', Product.STATUS.VISIBLE)
+        }
+         
         if (category_id) {
             query = query.where('category_id', category_id);
         }
@@ -218,22 +221,9 @@ export default class ProductsController {
                 q.whereBetween('stock', [stock_min || 0, stock_max || Number.MAX_VALUE]);
             });
         }
-        const total = Math.max((await query).length, 1);
-        let pages = Math.ceil(total / limit);
-        page = pages < page ? pages : page;
-        query = query.limit(limit).offset((page - 1) * limit);
-
-        if (order_by) {
-            if (order_by == 'date_asc') query = query.orderBy("products.created_at", "asc");
-            else if (order_by == 'date_desc') query = query.orderBy("products.created_at", "desc");
-            else {
-                const o = (order_by as string)
-                const c = o.substring(0, o.lastIndexOf('_'));
-                const m = o.substring(o.lastIndexOf('_') + 1, o.length) as any;
-                query = query.orderBy(c, m);
-            }
-        }
-        const products = await query;
+    
+        const p = await limitation(query, page, limit, order_by)
+        const products = await p.query;
         if (is_features_required) {
             const promises = products.map((product) => new Promise(async (rev) => {
                 try {
@@ -245,31 +235,27 @@ export default class ProductsController {
             }))
             const fullProduct = (await Promise.allSettled(promises)).map(m => (m as any).value);
             return {
-                page,
-                limit,
-                total,
+                ...p.paging,
                 list: fullProduct,
             };
         }
 
         return {
-            page,
-            limit,
-            total,
+            ...p.paging,
             list: products.map(p => Product.clientProduct(p))
         };
     }
 
-    async detail_products({ request }: HttpContext) {
-        const qs = request.qs();
-
-        return qs;
-    }
-
-    async delete_product({ request }: HttpContext) {
+    async delete_product({ request, auth }: HttpContext) {
         const product_id: string = request.param('id');
-        //const filesAttributes = ['images', 'model_images'] as const;
-        //const dirAttributes = ['scen_dir'];
+        
+        console.log({product_id});
+        
+        const product = await Product.find(product_id);
+        if(!product) throw new Error('Produt Not Found');
+        
+        const user = await auth.authenticate();
+        if (!await UserStore.isStoreManagerOrMore(user.id, product.store_id)) throw new Error('Permison Required')
 
         await deleteFiles(product_id);
         await (await Product.find(product_id))?.delete();

@@ -6,20 +6,18 @@ import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import db from '@adonisjs/lucid/services/db'
 import { limitation, paginate } from './Tools/Utils.js';
 import Product from '#models/product';
-import Store from '#models/store';
 import UserStore from '#models/user_store';
-import User, { USER_STATUS } from '#models/user';
+import User from '#models/user';
 export default class CatalogsController {
 
     async create_catalog({ request, auth }: HttpContext) {
         const { label, index, description, store_id } = request.body();
-        console.log(label, index, description, store_id);
-
+        
         const user = await auth.authenticate()
         if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error('Permison Required')
 
         const existCatalog = (await db.from(Catalog.table).where('label', label).andWhere('store_id', store_id).limit(1))[0];
-        if (existCatalog) throw new Error('This Catalog Exist on Your Store');
+        if (existCatalog) throw new Error('Catalog Exist on Your Store, with the same name');
 
         const catalog_id = v4();
         const catalog = await Catalog.create({
@@ -158,7 +156,8 @@ export default class CatalogsController {
         const catalog_id = request.param('id');
 
         const catalog = await Catalog.find(catalog_id);
-        if (!catalog) return 'Catalog not found';
+        if (!catalog) throw new Error( 'Catalog not found');
+        ;
 
         const user = await auth.authenticate()
         if (!await UserStore.isStoreManagerOrMore(user.id, catalog.store_id)) throw new Error('Permison Required')

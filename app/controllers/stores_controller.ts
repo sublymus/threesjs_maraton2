@@ -121,7 +121,7 @@ export default class StoresController {
 
         if (owner_id) {
             query = query.where('owner_id', owner_id);
-        }else{
+        } else {
             const p = UserStore.isAdmin(user.id)
         }
         if (phone) {
@@ -199,6 +199,10 @@ export default class StoresController {
             list: r,
             ...users.paging
         }
+    }
+
+    async get_store_by_name({ request }: HttpContext) {
+        return await Store.findBy('name',request.param('name'))
     }
 
     async get_store_clients({ request, auth }: HttpContext) {
@@ -325,28 +329,26 @@ export default class StoresController {
             store: Store.ParseStore(store)
         }
     }
-    async can_use_store ({ request, auth }: HttpContext){
+    async can_use_store({ request, auth }: HttpContext) {
         const { att } = request.params();
 
-        
         const user = await auth.authenticate()
-        console.log('EROOROROREEEEEEEEEEEEEEEEEEEEEEE', att, user.email);
         const store = (await db.query().from(Store.table).select('*').where('id', att).orWhere('name', att).limit(1))[0] as Store | undefined;
         if (!store) return 'Store not found';
         let userStore = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', store.id).andWhere((qr) => {
             qr.where('type', USER_TYPE.CLIENT).orWhere('type', USER_TYPE.COLLABORATOR)
         }).limit(1))[0] as UserStore | undefined
 
-        if(!userStore){
+        if (!userStore) {
             console.log('EROORORORE ________');
-            
-             userStore = await UserStore.create({
-                user_id:user.id,
-                store_id:store.id,
-                type:USER_TYPE.CLIENT
-            }) 
+
+            userStore = await UserStore.create({
+                user_id: user.id,
+                store_id: store.id,
+                type: USER_TYPE.CLIENT
+            })
         }
-        
+
         return userStore && {
             userStore,
             user: {
@@ -359,36 +361,36 @@ export default class StoresController {
     async delete_store({ request, auth }: HttpContext) {
         try {
             const user = await auth.authenticate();
-            
+
             // Find the store
             const s = await Store.find(request.param('id'));
             if (!s) {
                 throw new Error('Store not found');
             }
-    
+
             // Check if the authenticated user is the owner of the store
             if (s.owner_id !== user.id) {
                 throw new Error('Permission denied');
             }
-    
+
             // Delete the store
             await s.delete();
-    
+
             // Delete associated user store record
             const userStore = await UserStore.query()
                 .where('user_id', user.id)
                 .where('store_id', s.id)
                 .where('type', USER_TYPE.OWNER)
                 .first();
-    
+
             if (userStore) {
                 await userStore.delete();
             }
-    
+
             return { deleted: true };
         } catch (error) {
-           console.log(error);
-           
+            console.log(error);
+
             return { error: error.message };
         }
     }
@@ -408,8 +410,8 @@ export default class StoresController {
 
     async get_users_var({ request }: HttpContext) {
         const { store_id } = request.qs();
-        console.log({store_id});
-        
+        console.log({ store_id });
+
         if (!store_id) return 'store_id is required';
         const roles = (await db.from(Role.table).where('store_id', store_id).count('id as count'))[0]?.count;
         const collaborators = (await db.from(UserStore.table).where('store_id', store_id).andWhere('type', USER_TYPE.COLLABORATOR).count('id as count'))[0]?.count;

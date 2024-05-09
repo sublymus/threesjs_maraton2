@@ -8,6 +8,7 @@ import FeaturesController from '#controllers/features_controller';
 import FValueController from '#controllers/f_values_controller';
 import StoresController from '#controllers/stores_controller';
 import RolesController from '#controllers/roles_controller';
+import DiscussionController from '#controllers/discussions_controller';
 
 //Auth
 router.get('/google_connexion',[AuthController,'google_connexion']);
@@ -20,10 +21,7 @@ router.get('/global_disconnection',[AuthController,'global_disconnection']);
 
 //Product
 router.post('/create_product', [ProductsController,'create_product']);
-router.get('/get_product/:id', [ProductsController,'get_product']);
-router.get('/detail_product/:id', [ProductsController,'detail_product']);
 router.get('/get_products', [ProductsController,'get_products']);
-router.get('/detail_products', [ProductsController,'detail_products']);
 router.put('/update_product', [ProductsController,'update_product']);
 router.put('/update_view_product', [ProductsController,'update_view_product']);
 router.delete('/delete_product/:id', [ProductsController,'delete_product']);
@@ -62,6 +60,7 @@ router.get('/get_store_var', [StoresController,'get_store_var']);
 router.get('/get_users_var', [StoresController,'get_users_var']);
 router.get('/get_stores',[StoresController,'get_stores'])
 router.get('/owner_stores',[StoresController,'owner_stores'])
+router.get('/get_store_by_name/:name',[StoresController,'get_store_by_name'])
 router.get('/get_store_clients',[StoresController,'get_store_clients'])
 router.get('/get_store_collaborators',[StoresController,'get_store_collaborators'])
 router.get('/can_manage_store/:att',[StoresController,'can_manage_store'])
@@ -76,7 +75,16 @@ router.get('/get_store_roles', [RolesController,'get_store_roles']);
 router.get('/get_roles_json', [RolesController,'get_roles_json']);
 router.put('/update_role', [RolesController,'update_role']);
 router.delete('/delete_role',[RolesController,'delete_role'])
-
+//Discussion
+router.post('/create_discussion',[DiscussionController,'create_discussion'])
+router.get('/get_discussions',[DiscussionController,'get_discussions'])
+router.delete('/delete_discussion/:id',[DiscussionController,'delete_discussion'])
+router.put('/block_discussion/:id',[DiscussionController,'block_discussion'])
+router.put('/unblock_discussion/:id',[DiscussionController,'unblock_discussion'])
+router.post('/send_message',[DiscussionController,'send_message'])
+router.get('/get_messages',[DiscussionController,'get_messages'])
+router.put('/edit_message',[DiscussionController,'edit_message'])
+router.delete('/delete_message/:id',[DiscussionController,'delete_message'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`,({params,response})=>{
     const fileName = `/${(params['*'] as string[]).join('/')}`
