@@ -12,6 +12,7 @@ import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 export default class DiscussionController {
 
   public async get_discussions({ request, auth }: HttpContext) {
+    // on recus tout les messages
     const { blocked } = request.qs();
     const user = await auth.authenticate();
     const ds = await db.from(
@@ -24,17 +25,23 @@ export default class DiscussionController {
     ).select('*')
       .orderBy("updated_at", "desc");
     const ds2 = ds.filter(f => f.deleted != user.id);
-    const promises = ds2.map((d)=> new Promise(async(rev)=>{
-      const creator =( await db.from(User.table).where('id',d.creator_id).limit(1))[0];
-      const receiver = (await db.from(User.table).where('id',d.receiver_id).limit(1))[0];
+    const promises = ds2.map((d) => new Promise(async (rev) => {
+      const creator = (await db.from(User.table).where('id', d.creator_id).limit(1))[0];
+      const receiver = (await db.from(User.table).where('id', d.receiver_id).limit(1))[0];
+      const me = user.id == receiver.id ? 'receiver' : 'creator';
+      const other = user.id == receiver.id ? 'creator' : 'receiver';
+      d.receiver = User.ParseUser(receiver as any);
+      d.creator= User.ParseUser(creator as any);
+      
       rev({
         ...d,
-        receiver:User.ParseUser(receiver as any),
-        creator:User.ParseUser(creator as any)
+        me,
+        other,
+        unchedked_count: (await db.query().from(Message.table).select('*').where('table_id', d.id).andWhere('created_at', '>', d[me+'_opened_at'])).length
       })
     }));
 
-    const discussions = (await Promise.allSettled(promises)).filter(f=>f.status=='fulfilled').map(m=> (m as any).value)
+    const discussions = (await Promise.allSettled(promises)).filter(f => f.status == 'fulfilled').map(m => (m as any).value)
     if (blocked == 'no') {
       return discussions.filter(f => !f.blocked?.includes(user.id));
     } if (blocked == 'only') {
@@ -116,10 +123,15 @@ export default class DiscussionController {
     let { discussion_id, limit, page } = paginate(request.qs() as any);
     const user = await auth.authenticate();
     const discussion = await Discussion.find(discussion_id);
+    
     if (!discussion) return 'Discussion Not Found';
 
     if (discussion.deleted == user.id) return 'Discussion Deleted'
     if (discussion.creator_id !== user.id && discussion.receiver_id !== user.id) return "Permission Denied";
+
+    const me = discussion.creator_id == user.id ? 'creator' as const :'receiver' as const;
+    discussion[`${me}_opened_at`] = DateTime.now();
+    await discussion.save();
 
     const query = db.query().from(Message.table)
       .where("table_id", discussion_id);

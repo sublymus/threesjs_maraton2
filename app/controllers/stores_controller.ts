@@ -160,20 +160,28 @@ export default class StoresController {
         let query = db.query()
             .from(UserStore.table)
             .select('*')
+            .select('user_stores.type as s_type')
             .select('users.created_at as  created_at')
             .select('user_stores.created_at as  join_at')
             .innerJoin(User.table, 'user_id', 'users.id')
             .where('store_id', store_id)
-            .where('user_stores.type', USER_TYPE.COLLABORATOR);
+            .andWhere((p) => {
+                p.where('user_stores.type', USER_TYPE.COLLABORATOR).orWhere('user_stores.type', USER_TYPE.OWNER)
+            });
 
         if (user_id) {
             query = query.whereLike('id', `%${user_id}%`);
         } else {
             if (text) {
-                const v = `%${text.split('').join('%')}%`
-                query = query.andWhere((q) => {
-                    q.whereLike('phone', v).orWhereLike('phone', v).orWhereLike('name', v)
-                });
+                const t = text as string
+                const v = `%${t.split('').join('%')}%`;
+                if ((t).startsWith('#')) {
+                    query = query.whereLike('users.id', `%${t.replaceAll('#', '')}%`);
+                } else {
+                    query = query.andWhere((q) => {
+                        q.whereLike('email', v).orWhereLike('name', v)
+                    });
+                }
             } else {
                 if (email) {
                     query = query.andWhereLike('email', `%${email.split('').join('%')}%`);
@@ -190,19 +198,14 @@ export default class StoresController {
 
         const users = await limitation(query, page, limit, order_by)
 
-        const r = ((await users.query).map(u => User.ParseUser(u)));
-
-        console.log(r.length);
-
-
         return {
-            list: r,
+            list: ((await users.query).map(u => User.ParseUser(u))),
             ...users.paging
         }
     }
 
     async get_store_by_name({ request }: HttpContext) {
-        return await Store.findBy('name',request.param('name'))
+        return await Store.findBy('name', request.param('name'))
     }
 
     async get_store_clients({ request, auth }: HttpContext) {
@@ -212,6 +215,7 @@ export default class StoresController {
         let query = db.query()
             .from(UserStore.table)
             .select('*')
+            .select('users.type as u_type')
             .innerJoin(User.table, 'user_id', 'users.id')
             .where('store_id', store_id)
             .where('user_stores.type', USER_TYPE.CLIENT);
@@ -410,17 +414,13 @@ export default class StoresController {
 
     async get_users_var({ request }: HttpContext) {
         const { store_id } = request.qs();
-        console.log({ store_id });
 
         if (!store_id) return 'store_id is required';
         const roles = (await db.from(Role.table).where('store_id', store_id).count('id as count'))[0]?.count;
-        const collaborators = (await db.from(UserStore.table).where('store_id', store_id).andWhere('type', USER_TYPE.COLLABORATOR).count('id as count'))[0]?.count;
+        const collaborators = (await db.from(UserStore.table).where('store_id', store_id).andWhere((qr) => {
+            qr.where('type', USER_TYPE.OWNER).orWhere('type', USER_TYPE.COLLABORATOR)
+        }).count('id as count'))[0]?.count;
         const clients = (await db.from(UserStore.table).where('store_id', store_id).andWhere('type', USER_TYPE.CLIENT).count('id as count'))[0]?.count;
-        console.log({
-            roles,
-            collaborators,
-            clients
-        });
 
         return {
             roles,

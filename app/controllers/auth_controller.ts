@@ -85,6 +85,7 @@ export default class AuthController {
                 email,
                 name,
                 password: id,
+                status :USER_STATUS.VISIBLE,
                 photos: JSON.stringify([avatarUrl]),
             })
             newUser.id = user_id;
