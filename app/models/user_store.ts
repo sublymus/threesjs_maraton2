@@ -75,6 +75,11 @@ export default class UserStore extends BaseModel {
     }
     return await UserStore.isSublymusManager(user_id);
   }
+
+  public static parseUserStore(userStore:UserStore){
+    const s = (userStore.$attributes|| userStore);
+    return {...s,join_at : (s.createdAt|| s.created_at) }
+  }
 }
 
 //

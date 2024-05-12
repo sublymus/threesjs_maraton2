@@ -7,6 +7,12 @@ export default class Discussion extends BaseModel {
   declare id: string
 
   @column()
+  declare table_name: string | null
+  
+  @column()
+  declare table_id: string |null
+  
+  @column()
   declare creator_id: string
   
   @column()
@@ -18,11 +24,13 @@ export default class Discussion extends BaseModel {
   @column()
   declare blocked: string | null
 
-  @column.dateTime({ autoCreate: true })
+  @column.dateTime()
   declare creator_opened_at: DateTime
 
+  @column.dateTime()
   declare receiver_opened_at: DateTime
 
+  @column.dateTime({ autoCreate: true, autoUpdate: true , })
   declare created_at: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true , })

@@ -126,7 +126,8 @@ export default class CatalogsController {
 
         const q_catalogs = await limitation(query, page, limit, order_by)
         const catalogs = await q_catalogs.query
-
+  
+        console.log({ page, limit, text, index, order_by, is_category_required, all_status, store_id },catalogs);
         if (is_category_required) {
             const promises = catalogs.map((catalog) => new Promise(async (rev) => {
                 try {
@@ -141,11 +142,14 @@ export default class CatalogsController {
                 }
             }))
             const fullCatalog = (await Promise.allSettled(promises)).map(m => (m as any).value)
+          
+            
             return {
                 ...q_catalogs.paging,
                 list: fullCatalog
             }
         }
+        console.log('fullCatalog',catalogs);
         return {
             ...q_catalogs.paging,
             list: catalogs,

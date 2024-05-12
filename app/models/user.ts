@@ -66,7 +66,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
     let photos = [];
     try {
       photos = JSON.parse(user.photos || '[]')
-    } catch (error) { }
+    } catch (error) { console.error(error);
+     }
     return {
       ...(user.$attributes||user),
       photos,

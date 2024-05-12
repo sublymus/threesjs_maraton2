@@ -1,11 +1,11 @@
 import type { HttpContext } from '@adonisjs/core/http'
 
-import Role, { type TypeJsonRole, JsonRole } from "../models/role.js";
+import Role, { JsonRole } from "../models/role.js";
 import { v4 } from 'uuid';
 import db from '@adonisjs/lucid/services/db';
 import UserStore from '#models/user_store';
 import { limitation, paginate } from './Tools/Utils.js';
-import User, { USER_TYPE } from '#models/user';
+import { USER_TYPE } from '#models/user';
 export default class RolesController {
 
     async get_roles_json({ request }: HttpContext) {
@@ -65,19 +65,23 @@ export default class RolesController {
     }
     async change_collaborator_role({ request, auth }: HttpContext) {
         const { store_id, new_role_id, collaborator_id } = request.body();
-        console.log(store_id, new_role_id, collaborator_id);
-
+        
         const user = await auth.authenticate();
-        if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error('Permison Required')
+        const u = await UserStore.isStoreManagerOrMore(user.id, store_id);
+        if (!u) throw new Error('Permison Required') // TODO ajouter throw error partout;
+
+        const editor_role = u.roleId && await Role.find(u.roleId);
+        
+        if(editor_role && !editor_role.ban_collaborator)  throw new Error('Permison Required')
+        if(user.id == collaborator_id)  throw new Error('Can not your self role')
 
         const c_store = (await db.from(UserStore.table).where('store_id', store_id).andWhere('user_id', collaborator_id).andWhere('type', USER_TYPE.COLLABORATOR).limit(1))[0] as UserStore | null
-
-        console.log('c_store', c_store);
-
-        if (!c_store) return
+        if (!c_store) throw new Error('Collaborator not found in this store')
 
         const c = (await UserStore.find(c_store.id));
-        if (!c) return
+        if (!c) throw new Error('Collaborator not found in this store')
+        if(c.type == USER_TYPE.OWNER) throw new Error('Can not owner role')
+        
         c.roleId = new_role_id;
         await c.save();
         return c.$attributes

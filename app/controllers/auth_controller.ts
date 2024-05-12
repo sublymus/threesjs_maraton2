@@ -6,6 +6,7 @@ import { v4 } from "uuid";
 import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
 import { limitation, paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
+import UserStore from '#models/user_store';
 export default class AuthController {
 
     public async google_connexion({ ally }: HttpContext) {
@@ -150,8 +151,10 @@ export default class AuthController {
         }
     }
 
-    async get_users({ request }: HttpContext) {
-        // moderator // admin
+    async get_users({ request, auth }: HttpContext) {
+        const user = await auth.authenticate();
+        if(!await UserStore.isSublymusManager(user.id)) return  'Permission Required';
+
         const { page, limit, name, email, phone, user_id, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
 
 

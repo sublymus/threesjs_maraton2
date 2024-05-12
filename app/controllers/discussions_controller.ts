@@ -8,36 +8,35 @@ import Message from '#models/message';
 import { limitation, paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
+import Store from '#models/store';
 
 export default class DiscussionController {
 
   public async get_discussions({ request, auth }: HttpContext) {
     // on recus tout les messages
-    const { blocked } = request.qs();
+    const { blocked, store_id } = request.qs();
     const user = await auth.authenticate();
-    const ds = await db.from(
-      db.from(Discussion.table)
-        .select("*")
-        .where((q) => {
-          q.where("creator_id", user.id)
-            .orWhere("receiver_id", user.id)
-        })
-    ).select('*')
+    const ds = await db.from(Discussion.table)
+      .select("*")
+      .where((q) => {
+        q.where("creator_id", user.id)
+          .orWhere("receiver_id", user.id)
+      }).andWhere('table_id', store_id)
       .orderBy("updated_at", "desc");
     const ds2 = ds.filter(f => f.deleted != user.id);
     const promises = ds2.map((d) => new Promise(async (rev) => {
       const creator = (await db.from(User.table).where('id', d.creator_id).limit(1))[0];
       const receiver = (await db.from(User.table).where('id', d.receiver_id).limit(1))[0];
+      const other = user.id == receiver.id ? User.ParseUser(creator as any) : User.ParseUser(receiver as any);
+
       const me = user.id == receiver.id ? 'receiver' : 'creator';
-      const other = user.id == receiver.id ? 'creator' : 'receiver';
-      d.receiver = User.ParseUser(receiver as any);
-      d.creator= User.ParseUser(creator as any);
-      
+      const other_att = user.id == receiver.id ? 'creator' : 'receiver';
       rev({
         ...d,
-        me,
         other,
-        unchedked_count: (await db.query().from(Message.table).select('*').where('table_id', d.id).andWhere('created_at', '>', d[me+'_opened_at'])).length
+        other_att,
+        last_message: (await db.query().from(Message.table).select('*').where('table_id', d.id).orderBy('created_at', 'desc').limit(1))[0],
+        unchedked_count: (await db.query().from(Message.table).select('id').where('table_id', d.id).andWhere('user_id',other.id).andWhere('created_at', '>', (d[me + '_opened_at']||0))).length
       })
     }));
 
@@ -51,12 +50,17 @@ export default class DiscussionController {
   }
 
   public async create_discussion({ auth, request }: HttpContext) {
-    const { receiver_id } = request.body();
+    const { receiver_id , store_id } = request.body();
 
+    const store = await Store.find(store_id||'');
+    if(!store) throw new Error("Store Not Found");
+    
     const receiver = await User.find(receiver_id);
-    if (!receiver) return 'Receiver Not Found';
-
+    if (!receiver) throw new Error('Receiver Not Found');
+    
     const user = await auth.authenticate();
+    if(receiver_id == user.id) throw new Error("You Can't chat with you self");
+    
     const id = v4();
 
     const existingDiscussion = (await Discussion.query()
@@ -66,24 +70,30 @@ export default class DiscussionController {
       }).orWhere((p) => {
         p.where("creator_id", receiver_id)
           .andWhere("receiver_id", user.id)
-      }).limit(1))[0];
+      }).andWhere('table_id',store_id).limit(1))[0];
     if (existingDiscussion) {
       if (existingDiscussion.deleted == user.id) {
         existingDiscussion.deleted = null;
         await existingDiscussion.save();
       }
-      return existingDiscussion.$attributes
+      return {
+        ...existingDiscussion.$attributes,
+        other:receiver,
+      }
     }
 
     const discussion = await Discussion.create({
       id,
       creator_id: user.id,
       receiver_id,
-      creator_opened_at: DateTime.now()
+      creator_opened_at: DateTime.now(),
+      table_id:store_id,
+      table_name:Store.table,
     })
 
     return {
       ...discussion.$attributes,
+      other: User.ParseUser(receiver),
       id,
     }
   }
@@ -123,19 +133,19 @@ export default class DiscussionController {
     let { discussion_id, limit, page } = paginate(request.qs() as any);
     const user = await auth.authenticate();
     const discussion = await Discussion.find(discussion_id);
-    
+
     if (!discussion) return 'Discussion Not Found';
 
     if (discussion.deleted == user.id) return 'Discussion Deleted'
     if (discussion.creator_id !== user.id && discussion.receiver_id !== user.id) return "Permission Denied";
 
-    const me = discussion.creator_id == user.id ? 'creator' as const :'receiver' as const;
+    const me = discussion.creator_id == user.id ? 'creator' as const : 'receiver' as const;
+
     discussion[`${me}_opened_at`] = DateTime.now();
     await discussion.save();
-
     const query = db.query().from(Message.table)
       .where("table_id", discussion_id);
-    const p = await limitation(query, page, limit, 'created_at_asc')
+    const p = await limitation(query, page, limit, 'created_at_asc');
 
     return {
       ...p.paging,
@@ -182,7 +192,8 @@ export default class DiscussionController {
     const user = await auth.authenticate();
 
     const discussion = await Discussion.find(discussion_id);
-    if (!discussion) return "ERROR discussion not found"
+    if (!discussion) throw new Error("ERROR discussion not found");
+    
 
     if (discussion.deleted && discussion.deleted != user.id) {
       const messages = await Message.query().where("table_id", discussion_id)
@@ -209,12 +220,16 @@ export default class DiscussionController {
     const user = await auth.authenticate();
 
     const discussion = await Discussion.find(discussion_id);
-    if (!discussion) return "ERROR discussion not found"
+    if (!discussion) throw new Error("ERROR discussion not found");
+    
 
     if (!discussion.blocked?.includes(user.id)) {
       discussion.blocked = (discussion.blocked || '') + user.id;
       await discussion.save()
     }
+
+    console.log('@@@@@@@@@' , discussion);
+    
 
     return discussion.$attributes
   }
@@ -224,7 +239,8 @@ export default class DiscussionController {
     const user = await auth.authenticate();
 
     const discussion = await Discussion.find(discussion_id);
-    if (!discussion) return "ERROR discussion not found"
+    if (!discussion) throw new Error("ERROR discussion not found");
+    
 
     if (discussion.blocked?.includes(user.id)) {
       discussion.blocked = discussion.blocked.replaceAll(user.id, '') || null;
