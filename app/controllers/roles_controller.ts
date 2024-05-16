@@ -8,11 +8,11 @@ import { limitation, paginate } from './Tools/Utils.js';
 import { USER_TYPE } from '#models/user';
 export default class RolesController {
 
-    async get_roles_json({ request }: HttpContext) {
+    async get_roles_json({ }: HttpContext) {
         return JsonRole
     }
     async get_store_roles({ request, auth }: HttpContext) {
-        let { page, limit, name, order_by, store_id } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        let { page, limit, name, order_by, store_id, role_id } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
 
         const user = await auth.authenticate()
         if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error('Permison Required')
@@ -24,7 +24,9 @@ export default class RolesController {
             query = query.andWhereLike('store_id', store_id).andWhere('store_id', store_id);
         }
 
-        if (name) {
+        if(role_id){
+            query = query.andWhereLike('id', role_id);
+        }else if (name) {
             query = query.andWhereLike('name', `%${name.split('').join('%')}%`);
         }
 

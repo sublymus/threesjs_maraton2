@@ -7,8 +7,8 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').primary();
 
-      table.string('table_id')
-      table.uuid('table_name')
+      table.uuid('table_id')
+      table.string('table_name')
       table.uuid('creator_id').notNullable().references('id').inTable('users');
       table.uuid('receiver_id').notNullable().references('id').inTable('users');
 

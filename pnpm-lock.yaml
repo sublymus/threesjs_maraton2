@@ -23,6 +23,9 @@ dependencies:
   '@adonisjs/lucid':
     specifier: ^20.1.0
     version: 20.3.1(@adonisjs/assembler@7.2.3)(@adonisjs/core@6.3.1)(better-sqlite3@9.4.3)(luxon@3.4.4)
+  '@adonisjs/transmit':
+    specifier: ^1.0.0
+    version: 1.0.0(@adonisjs/core@6.3.1)
   '@types/adm-zip':
     specifier: ^0.5.5
     version: 0.5.5
@@ -541,6 +544,21 @@ packages:
       '@poppinss/colors': 4.1.2
       string-width: 7.1.0
 
+  /@adonisjs/transmit@1.0.0(@adonisjs/core@6.3.1):
+    resolution: {integrity: sha512-+aGRm4YusucnEmSQh8mESX4OkCVIfaShDZivNSaXIUOWWrm26a/jnssuzoQAVQNMD0YSrqcMTN0EeV76n7O7Xg==}
+    engines: {node: '>=20.11.1'}
+    peerDependencies:
+      '@adonisjs/core': ^6.2.0
+    dependencies:
+      '@adonisjs/core': 6.3.1(@adonisjs/assembler@7.2.3)(@vinejs/vine@1.7.1)
+      '@boringnode/bus': 0.5.0
+      '@poppinss/matchit': 3.1.2
+      '@poppinss/utils': 6.7.2
+      emittery: 1.0.3
+    transitivePeerDependencies:
+      - ioredis
+    dev: false
+
   /@adonisjs/tsconfig@1.3.0:
     resolution: {integrity: sha512-+nOykDG44b4JSAdsrTdh5HuZqJpr6F+dHpfNYgHfYsFJIEtZo8plHilZAM7iabCRN5R49SPv5p8Ixcp47Rr50g==}
     dev: true
@@ -603,6 +621,20 @@ packages:
       chalk: 2.4.2
       js-tokens: 4.0.0
     dev: true
+
+  /@boringnode/bus@0.5.0:
+    resolution: {integrity: sha512-b0jtcAv/IgDrFz10kNJJT5+pyNTdSNxsPCudbnDe4PQ6KzfMQRQQolqFe0uotlmsVmWCBxUN5MyV06vdQ4MeRQ==}
+    engines: {node: '>=20.11.1'}
+    peerDependencies:
+      ioredis: ^5.0.0
+    peerDependenciesMeta:
+      ioredis:
+        optional: true
+    dependencies:
+      '@paralleldrive/cuid2': 2.2.2
+      '@poppinss/utils': 6.7.2
+      object-hash: 3.0.0
+    dev: false
 
   /@colors/colors@1.5.0:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -4254,6 +4286,11 @@ packages:
       copy-descriptor: 0.1.1
       define-property: 0.2.5
       kind-of: 3.2.2
+    dev: false
+
+  /object-hash@3.0.0:
+    resolution: {integrity: sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==}
+    engines: {node: '>= 6'}
     dev: false
 
   /object-inspect@1.13.1:

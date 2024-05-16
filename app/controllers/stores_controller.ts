@@ -158,6 +158,8 @@ export default class StoresController {
         let { page, limit, name, email, user_id, phone, order_by, store_id, text, } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         // const user = await auth.authenticate();
         // permision store_owner | store_collaborator | moderator | admin 
+        console.log({page, limit, name, email, user_id, phone, order_by, store_id, text});
+        
         let query = db.query()
             .from(UserStore.table)
             .select('*')
@@ -172,7 +174,7 @@ export default class StoresController {
             });
 
         if (user_id) {
-            query = query.whereLike('id', `%${user_id}%`);
+            query = query.whereLike('users.id', `%${user_id}%`);
         } else {
             if (text) {
                 const t = text as string
@@ -199,11 +201,10 @@ export default class StoresController {
         }
 
         const users = await limitation(query, page, limit, order_by)
-
         return {
             list: ((await users.query).map(u => User.ParseUser(u))),
             ...users.paging
-        }
+        };
     }
 
     async get_store_by_name({ request }: HttpContext) {
@@ -219,12 +220,14 @@ export default class StoresController {
             .select('*')
             .select('user_stores.id as user_store_id')
             .select('user_stores.type as s_type')
+            .select('users.created_at as  created_at')
+            .select('user_stores.created_at as  join_at')
             .innerJoin(User.table, 'user_id', 'users.id')
             .where('store_id', store_id)
             .where('user_stores.type', USER_TYPE.CLIENT);
 
         if (user_id) {
-            query = query.whereLike('id', `%${user_id}%`);
+            query = query.whereLike('users.id', `%${user_id}%`);
         } else {
             if (text) {
                 const v = `%${text.split('').join('%')}%`

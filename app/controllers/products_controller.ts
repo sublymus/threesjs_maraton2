@@ -13,7 +13,6 @@ import UserStore from '#models/user_store';
 import Category from '#models/category';
 import User from '#models/user';
 
-let i = 0;
 export default class ProductsController {
     async create_product({ request , auth}: HttpContext) {
         const { title, description, features_id, price, stock, category_id, is_dynamic_price } = request.body();
@@ -176,7 +175,7 @@ export default class ProductsController {
 
     async get_products({ request , auth}: HttpContext) {                               // price_desc price_asc date_desc date_asc
     
-        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required , all_status, store_id  } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required , all_status, store_id, product_id  } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         let query = db.query().from(Product.table).select('*');
         
         let user: User | undefined;
@@ -185,6 +184,9 @@ export default class ProductsController {
             if (!await UserStore.isSublymusManager(user.id)) throw new Error('Sublymus Permison Required')
         } else {
             query = query.where('store_id', store_id);
+        }
+        if(product_id){
+            query = query.andWhere('id', product_id);
         }
         if (all_status) {
             !user && (user = await auth.authenticate());
@@ -234,12 +236,14 @@ export default class ProductsController {
                 }
             }))
             const fullProduct = (await Promise.allSettled(promises)).map(m => (m as any).value);
+            console.log({fullProduct});
+            
             return {
                 ...p.paging,
                 list: fullProduct,
             };
         }
-
+        
         return {
             ...p.paging,
             list: products.map(p => Product.clientProduct(p))

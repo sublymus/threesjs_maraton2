@@ -9,6 +9,7 @@ import FValueController from '#controllers/f_values_controller';
 import StoresController from '#controllers/stores_controller';
 import RolesController from '#controllers/roles_controller';
 import DiscussionController from '#controllers/discussions_controller';
+import MessagesController from '#controllers/messages_controller';
 
 //Auth
 router.get('/google_connexion',[AuthController,'google_connexion']);
@@ -78,13 +79,14 @@ router.delete('/delete_role',[RolesController,'delete_role'])
 //Discussion
 router.post('/create_discussion',[DiscussionController,'create_discussion'])
 router.get('/get_discussions',[DiscussionController,'get_discussions'])
-router.delete('/delete_discussion/:id',[DiscussionController,'delete_discussion'])
 router.put('/block_discussion/:id',[DiscussionController,'block_discussion'])
 router.put('/unblock_discussion/:id',[DiscussionController,'unblock_discussion'])
-router.post('/send_message',[DiscussionController,'send_message'])
-router.get('/get_messages',[DiscussionController,'get_messages'])
-router.put('/edit_message',[DiscussionController,'edit_message'])
-router.delete('/delete_message/:id',[DiscussionController,'delete_message'])
+router.delete('/delete_discussion/:id',[DiscussionController,'delete_discussion'])
+//Message
+router.post('/send_message',[MessagesController,'send_message'])
+router.get('/get_messages',[MessagesController,'get_messages'])
+router.put('/edit_message',[MessagesController,'edit_message'])
+router.delete('/delete_message/:id',[MessagesController,'delete_message'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`,({params,response})=>{
     const fileName = `/${(params['*'] as string[]).join('/')}`

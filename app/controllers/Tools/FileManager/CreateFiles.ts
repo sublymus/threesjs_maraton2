@@ -107,9 +107,11 @@ export function moveFile({
     try {
       let fileName = ''
       let stat: sharp.Metadata | undefined;
+      let ext= file.clientName
+      ext = ext.lastIndexOf('.')+1< ext.length ?ext.substring(ext.lastIndexOf('.')+1,ext?.length) : 'zip'
       fileName = `${Date.now().toString(32)}_${Math.round(
         Math.random() * 10e6
-      ).toString(36)}${count}_${table_name}_${column_name}_${table_id}.webp`;
+      ).toString(36)}${count}_${table_name}_${column_name}_${table_id}.${ext}`;
 
       const path = `${env.get("FILE_STORAGE_PATH")}/${fileName}`;
       const url = `${env.get("FILE_STORAGE_URL")}/${fileName}`;
@@ -157,7 +159,10 @@ export function moveFile({
           rev(url)
         });
       }else if(!compress || compress == 'none'){
-       await file.move(path);
+       await file.move(env.get("FILE_STORAGE_PATH"),{
+        name:fileName,
+        overwrite:true,
+       });
        rev(url);
       }else if (compress && compress == 'zip'){
         throw new Error(' compress ==> ZIP      not implemented');

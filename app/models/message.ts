@@ -43,4 +43,16 @@ export default class Message extends BaseModel {
   public static async setUUID (message: Message) {
     if(!message.id)message.id = v4()
   }
+public static parseMessage(m:Message){
+  
+  let files = [];
+  try {
+    files = JSON.parse((m.$attributes||m).files);
+  } catch (error) { throw new Error(error.message);}
+  return {
+    ...(m.$attributes||m),
+    files
+  }
+
+}
 }
