@@ -28,6 +28,9 @@ export default class Store extends BaseModel {
   declare banners: string
 
   @column()
+  declare  logo: string
+
+  @column()
   declare website: string
 
   @column()
@@ -47,7 +50,7 @@ export default class Store extends BaseModel {
   public static ParseStore(store: Store) {
     const att: any = {};
 
-    ['banners'].forEach(a => {
+    ['banners', 'logo'].forEach(a => {
       try {
         att[a] = JSON.parse((store.$attributes || store)[a])
       } catch (error) { }

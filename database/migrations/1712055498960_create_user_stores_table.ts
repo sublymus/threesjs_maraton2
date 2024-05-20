@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       table.uuid('role_id')
       table.string('type', 25);
       table.string('user_id').notNullable();
-      table.uuid('store_id').references('id').inTable('stores');
+      table.uuid('store_id').references('id').inTable('stores').onDelete('CASCADE');
 
       table.timestamp('created_at');
       table.timestamp('updated_at');

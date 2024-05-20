@@ -83,10 +83,10 @@ export async function updateFiles({
         if (fs.existsSync(filePath)) {
           fileLength++;
           return Promise.resolve(fileUrl);
-        } else return Promise.reject(null);
+        } else return Promise.resolve(null);
       }
     } catch (error) {
-      return Promise.reject(null);
+      return Promise.resolve(null);
     }
   });
 
@@ -103,7 +103,7 @@ export async function updateFiles({
   }
 
   newUrls = (await Promise.allSettled(promisesAdd))
-    .filter((f) => f.status === "fulfilled")
+    .filter((f) => f.status === "fulfilled" && (f as any).value != null)
     .map((m) => (m as any).value);
 
   _lastUrls.forEach((lastUrl) => {

@@ -5,11 +5,13 @@ import env from './env.js';
 import CatalogsController from '#controllers/catalogs_controller';
 import CategoriesController from '#controllers/categories_controller';
 import FeaturesController from '#controllers/features_controller';
-import FValueController from '#controllers/f_values_controller';
+import ComponentController from '#controllers/components_controller';
 import StoresController from '#controllers/stores_controller';
 import RolesController from '#controllers/roles_controller';
 import DiscussionController from '#controllers/discussions_controller';
 import MessagesController from '#controllers/messages_controller';
+import SessionController from '#controllers/session_controller';
+import CommandsController from '#controllers/commands_controller';
 
 //Auth
 router.get('/google_connexion',[AuthController,'google_connexion']);
@@ -19,7 +21,6 @@ router.get('get_users/', [AuthController,'get_users']);
 router.put('edit_me/', [AuthController,'edit_me']);
 router.get('/disconnection',[AuthController,'disconnection']);
 router.get('/global_disconnection',[AuthController,'global_disconnection']);
-
 //Product
 router.post('/create_product', [ProductsController,'create_product']);
 router.get('/get_products', [ProductsController,'get_products']);
@@ -40,20 +41,20 @@ router.put('/update_view_category', [CategoriesController,'update_view_category'
 router.delete('/delete_category/:id', [CategoriesController,'delete_category']);
 //Features
 router.post('/create_feature', [FeaturesController,'create_feature']);
-router.get('/get_feature/:id', [FeaturesController,'get_feature']);
 router.get('/get_features', [FeaturesController,'get_features']);
 router.put('/update_feature', [FeaturesController,'update_feature']);
 router.delete('/delete_feature/:id', [FeaturesController,'delete_feature']);
-router.post('/add_features_to_product', [FeaturesController,'add_features_to_product']);
+router.post('/add_features_to_product', [FeaturesController,'add_feature_to_product']);
 router.delete('/remove_features_to_product', [FeaturesController,'remove_features_to_product']);
 router.get('/get_features_of_product', [FeaturesController,'get_features_of_product']);
 router.get('/get_products_of_feature', [FeaturesController,'get_products_of_feature']);
-//FValue
-router.post('/create_f_value', [FValueController,'create_f_value']);
-router.get('/get_f_value/:id', [FValueController,'get_f_value']);
-router.get('/get_f_values', [FValueController,'get_f_values']);
-router.put('/update_f_value', [FValueController,'update_f_value']);
-router.delete('/delete_f_value/:id', [FValueController,'delete_f_value']);
+//Component
+router.post('/create_component', [ComponentController,'create_component']);
+router.get('/get_components', [ComponentController,'get_components']);
+router.put('/update_component', [ComponentController,'update_component']);
+router.delete('/delete_component/:id', [ComponentController,'delete_component']);
+router.post('/set_product_feature_component', [ComponentController,'set_product_feature_component']);
+router.put('/update_product_feature_component', [ComponentController,'update_product_feature_component']);
 //Store
 router.post('/create_store', [StoresController,'create_store']);
 router.post('/add_collaborator',[StoresController,'add_collaborator'])
@@ -82,11 +83,22 @@ router.get('/get_discussions',[DiscussionController,'get_discussions'])
 router.put('/block_discussion/:id',[DiscussionController,'block_discussion'])
 router.put('/unblock_discussion/:id',[DiscussionController,'unblock_discussion'])
 router.delete('/delete_discussion/:id',[DiscussionController,'delete_discussion'])
+//Session
+router.post('/create_session',[SessionController,'create_session'])
+router.get('/get_sessions',[SessionController,'get_sessions'])
+router.put('/close_session/:id',[SessionController,'close_session'])
+router.put('/open_session/:id',[SessionController,'open_session'])
+router.delete('/delete_session/:id',[SessionController,'delete_session'])
 //Message
 router.post('/send_message',[MessagesController,'send_message'])
 router.get('/get_messages',[MessagesController,'get_messages'])
 router.put('/edit_message',[MessagesController,'edit_message'])
 router.delete('/delete_message/:id',[MessagesController,'delete_message'])
+//Command
+router.post('/create_command',[CommandsController,'create_command'])
+router.get('/get_commands',[CommandsController,'get_commands'])
+router.put('/update_command',[CommandsController,'update_command'])
+router.delete('/delete_command/:id',[CommandsController,'delete_command'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`,({params,response})=>{
     const fileName = `/${(params['*'] as string[]).join('/')}`

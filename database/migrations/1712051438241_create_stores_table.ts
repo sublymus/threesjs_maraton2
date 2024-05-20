@@ -7,13 +7,14 @@ export default class extends BaseSchema {
       table.uuid('id').primary()
 
       table.string('name').notNullable().unique();
-      table.uuid('owner_id').notNullable().references('id').inTable('users');
+      table.uuid('owner_id').references('id').inTable('users').onDelete('CASCADE');
       table.string('description')
       table.uuid('interface_id')
       table.string('website')
       table.string('phone')
       table.string('store_email')
       table.string('banners')
+      table.string('logo')
       table.uuid('address_id')
       table.timestamp('expire_at')
       

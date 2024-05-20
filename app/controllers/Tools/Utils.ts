@@ -18,6 +18,10 @@ export function paginate<T extends {page:number|undefined,limit:number|undefined
 
 export async function limitation(query: DatabaseQueryBuilderContract<any>, page:number, limit:number, order_by?:string) {
     const total = Math.max((await query).length, 1);
+    limit = limit ||25
+    limit = limit >50?50:limit<1?1:limit
+    page = page||1
+    page = page <1 ? 1 :page
     let pages = Math.ceil(total / limit);
     page = pages < page ? pages : page;
     query = query.limit(limit).offset((page - 1) * limit);
@@ -45,5 +49,7 @@ export enum ERROR {
     PERMISION_REQUIRED,
     NOT_FOUND,
 }
+
+
 
 ///home/opus/WorkSpace/Sublymus/sublymus_server/node_modules/.pnpm/@poppinss+matchit@3.1.2/node_modules/@poppinss/matchit/lib/matchit.js:25:49

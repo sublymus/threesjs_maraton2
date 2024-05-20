@@ -9,8 +9,8 @@ export default class extends BaseSchema {
 
       table.uuid('table_id')
       table.string('table_name')
-      table.uuid('creator_id').notNullable().references('id').inTable('users');
-      table.uuid('receiver_id').notNullable().references('id').inTable('users');
+      table.uuid('creator_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+      table.uuid('receiver_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
 
       table.string('deleted')  // '__id__' 
       table.string('blocked')//  '__id__' or '__id__:__id__'

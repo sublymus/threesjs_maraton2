@@ -8,6 +8,9 @@ export default class Session extends BaseModel {
   declare id: string
 
   @column()
+  declare title :string
+
+  @column()
   declare table_name: string | null
   
   @column()

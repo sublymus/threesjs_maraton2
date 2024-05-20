@@ -176,6 +176,7 @@ export default class ProductsController {
     async get_products({ request , auth}: HttpContext) {                               // price_desc price_asc date_desc date_asc
     
         let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required , all_status, store_id, product_id  } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+   
         let query = db.query().from(Product.table).select('*');
         
         let user: User | undefined;
@@ -194,6 +195,7 @@ export default class ProductsController {
         } else {
             query.andWhere('products.status', Product.STATUS.VISIBLE)
         }
+        console.log(await query);
          
         if (category_id) {
             query = query.where('category_id', category_id);
@@ -209,7 +211,7 @@ export default class ProductsController {
                 query = query.andWhereLike('id', like.replaceAll('#',''));
             } else {
                 query = query.andWhere((q) => {
-                    q.whereLike('id', like).orWhereLike('title', like).orWhereLike('description', like);
+                    q.whereLike('title', like).orWhereLike('description', like);
                 });
             }
         }
@@ -226,6 +228,8 @@ export default class ProductsController {
     
         const p = await limitation(query, page, limit, order_by)
         const products = await p.query;
+        console.log(products);
+        
         if (is_features_required) {
             const promises = products.map((product) => new Promise(async (rev) => {
                 try {

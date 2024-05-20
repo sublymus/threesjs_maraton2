@@ -14,9 +14,6 @@ import UserStore from '#models/user_store';
 import User, { USER_STATUS, USER_TYPE } from '#models/user';
 import Role from '#models/role';
 
-
-
-
 export default class StoresController {
     async create_store({ request, auth }: HttpContext) {
         const { name, description, phone, website, store_email } = request.body();
@@ -46,6 +43,20 @@ export default class StoresController {
                     maxSize: 12 * 1024 * 1024,
                 },
             });
+            const logo = await createFiles({
+                request,
+                column_name: "logo",
+                table_id: id,
+                table_name: "stores",
+                options: {
+                    throwError: true,
+                    compress: 'img',
+                    min: 1,
+                    max: 1,
+                    extname: ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng', 'gif', "jpg", "png", "jpeg", "webp"],
+                    maxSize: 12 * 1024 * 1024,
+                },
+            });
             const store = await Store.create({
                 description,
                 id,
@@ -54,6 +65,7 @@ export default class StoresController {
                 banners: JSON.stringify(imagesUrl),
                 phone,
                 website,
+                logo:JSON.stringify(logo),
                 store_email
                 // address_id
                 // interface_id
@@ -88,7 +100,7 @@ export default class StoresController {
 
         ['name', 'description', 'phone', 'website', 'store_email'].forEach((a => (store as any)[a] = body[a]));
         let urls: any = []
-        for (const f of ['banners'] as const) {
+        for (const f of ['banners','logo'] as const) {
             if (!body[f]) continue;
 
             urls = await updateFiles({
@@ -101,7 +113,7 @@ export default class StoresController {
                 options: {
                     throwError: false,
                     min: 1,
-                    max: 7,
+                    max: 1,
                     compress: 'img',
                     extname: ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng', 'gif', "jpg", "png", "jpeg", "webp"],
                     maxSize: 12 * 1024 * 1024,

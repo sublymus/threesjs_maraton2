@@ -14,10 +14,10 @@ export default class extends BaseSchema {
       table.string('status',10).notNullable()
       table.integer('stock').notNullable()
       table.string('keywords').notNullable() //TODO
-      table.uuid('category_id').notNullable().references('id').inTable('categories');
+      table.uuid('category_id').notNullable().references('id').inTable('categories').onDelete('CASCADE');
       table.integer('price'); // require if is_dynamic_price
       table.boolean('is_dynamic_price')
-      table.uuid('store_id').notNullable().references('id').inTable('stores');
+      table.uuid('store_id').notNullable().references('id').inTable('stores').onDelete('CASCADE');
       table.uuid('collaborator_id').notNullable()//TODO remplacer par action
       
       table.uuid('engineer_id')

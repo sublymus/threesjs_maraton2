@@ -7,10 +7,12 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').primary();
 
+      table.uuid('title')
+
       table.uuid('table_id')
       table.string('table_name')
-      table.uuid('creator_id').notNullable().references('id').inTable('users');
-      table.uuid('receiver_id').notNullable().references('id').inTable('users');
+      table.uuid('creator_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+      table.uuid('receiver_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
 
       table.string('deleted')  //'__id__' 
       table.string('closed')//'__id__' or '__id__:__id__'

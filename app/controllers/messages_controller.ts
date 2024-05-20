@@ -8,15 +8,19 @@ import { limitation, paginate } from './Tools/Utils.js';
 import { DateTime } from 'luxon';
 import db from '@adonisjs/lucid/services/db';
 import User from '#models/user';
-import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
+import Session from '#models/session';
 
-type ContextName = 'discussions'|'groups'|'sessions';
+type ContextName = 'discussions'|'sessions';
 type ContextType = {
     id:string,
     deleted?:string,
     creator_id:string,
     receiver_id?:string
 }&Record<string,any>
+const contextMap = {
+  discussions: Discussion,
+  sessions: Session
+}
 export default class MessagesController {
 
 
@@ -25,13 +29,13 @@ export default class MessagesController {
     const { context_id, context_name, text } = request.body();
     const user = await auth.authenticate();
 
-    const discussion = (await db.query().from(context_name).where('id',context_id))[0] as ContextType;
-    if (!discussion) throw new Error( context_name+" Not Found");
-    console.log(discussion);
+    const context = (await db.query().from(context_name).where('id',context_id))[0] as ContextType;
+    if (!context) throw new Error( context_name+" Not Found");
+    console.log(context);
     
-    if (discussion.deleted == user.id) throw new Error('Discussion Deleted');
+    if (context.deleted == user.id) throw new Error('Context Deleted');
     
-    if (discussion.creator_id !== user.id && discussion.receiver_id !== user.id) return "Permission Denied";
+    if (context.creator_id !== user.id && context.receiver_id !== user.id) return "Permission Denied";
 
     const message_id = v4();
     const files = await createFiles({
@@ -60,32 +64,33 @@ export default class MessagesController {
   }
 
   public async get_messages({ request, auth }: HttpContext) {
-    let { context_id, limit, page } = paginate(request.qs() as any);
+    let { context_id,context_name, limit, page } = paginate(request.qs() as any);
+    const n= context_name as ContextName;
     const user = await auth.authenticate();
-    const discussion = await Discussion.find(context_id);
+    
+    const context = await contextMap[n].find(context_id);
     console.log({context_id, user:user.email});
     
-    if (!discussion) throw new Error('Discussion Not Found');
+    if (!context) throw new Error('Discussion Not Found');
 
-    if (discussion.deleted == user.id) throw new Error('Discussion Deleted');
+    if (context.deleted == user.id) throw new Error('Discussion Deleted');
     
-    if (discussion.creator_id !== user.id && discussion.receiver_id !== user.id) throw new Error("Permission Denied");
-    ;
+    if (context.creator_id !== user.id && context.receiver_id !== user.id) throw new Error("Permission Denied");
 
-    const me = discussion.creator_id == user.id ? 'creator' as const : 'receiver' as const;
-    // const other_att = discussion.creator_id == user.id ? 'receiver' as const : 'creator' as const;
+    const me = context.creator_id == user.id ? 'creator' as const : 'receiver' as const;
+    // const other_att = context.creator_id == user.id ? 'receiver' as const : 'creator' as const;
 
-    discussion[`${me}_opened_at`] = DateTime.now();
-    await discussion.save();
+    context[`${me}_opened_at`] = DateTime.now();
+    await context.save();
     const query = db.query().from(Message.table)
       .where("table_id", context_id);
     const p = await limitation(query, page, limit, 'created_at_desc');
 
-    const other = await User.find(discussion[`${me}_id`]);
+    const other = await User.find(context[`${me}_id`]);
     if(!other) throw new Error("Receiver Not fount");
     
 
-    transmit.broadcast(context_id,{context_id:context_id})
+    transmit.broadcast(context_id,{reload:true})
     
     return {
       ...p.paging,

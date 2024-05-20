@@ -9,9 +9,9 @@ export default class extends BaseSchema {
     
       table.string('label').notNullable();
       table.string('description').notNullable();
-      table.uuid('catalog_id').notNullable().references('id').inTable('catalogs');
+      table.uuid('catalog_id').notNullable().references('id').inTable('catalogs').onDelete('CASCADE');
       table.string('scene_dir');
-      table.uuid('store_id').notNullable().references('id').inTable('stores');
+      table.uuid('store_id').notNullable().references('id').inTable('stores').onDelete('CASCADE');
       
       table.smallint('index').notNullable();
       table.string('status').notNullable();

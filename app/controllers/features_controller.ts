@@ -2,18 +2,29 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 import Feature from "#models/feature";
 import { v4 } from 'uuid';
-import { paginate } from './Tools/Utils.js';
+import { limitation, paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import PivotProductsFeature from '#models/pivot_products_feature';
 import Product from '#models/product';
 import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
+import UserStore from '#models/user_store';
+import ProductFeatureComponent from '#models/product_feature_component';
+import Component from '#models/component';
 
 export default class FeaturesController {
-    async create_feature({ request }: HttpContext) {
-        const { collect_type, name, view, default_value, required, placeholder, capitalize, uppercase, lowercase, trim, match, max_length, min_length, max_size, max, min, mime, values } = request.body();
+    async create_feature({ request, auth }: HttpContext) {
+        const { store_id, collect_type, name, _enum, default_value, required, placeholder, capitalize, uppercase, lowercase, trim, match, max_length, min_length, max_size, max, min, mime, values } = request.body();
+
+        const user = await auth.authenticate();
+        if (!UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error("PREMISSION REQUIRED");
+
         const feature_id = v4();
+
+        const existingFeature = (await db.from(Feature.table).select('id').where('store_id', store_id).andWhere('name', name).limit(1))[0];
+        if (existingFeature) throw new Error("FEATURE :'" + name + "' already existin this store ");
+
         const icon_url = await createFiles({
             request,
             column_name: "icon",
@@ -34,7 +45,6 @@ export default class FeaturesController {
             collect_type,
             required,
             placeholder,
-            view,
             default_value,
             icon: JSON.stringify(icon_url),
             lowercase,
@@ -47,27 +57,32 @@ export default class FeaturesController {
             max_size,
             max,
             min,
+            store_id,
             // mime,
             // ext,
-            values,
+            enum: _enum,
             // is_f_alue
         })
         feature.id = feature_id;
-        return feature.$attributes
+        return Feature.parseFeature(feature)
     }
 
-    async update_feature({ request }: HttpContext) {
+    async update_feature({ request, auth }: HttpContext) {
         const body = request.body();
+        const user = await auth.authenticate();
+        if (!UserStore.isStoreManagerOrMore(user.id, body.store_id)) throw new Error("PREMISSION REQUIRED");
 
         const feature = await Feature.find(body.feature_id);
         if (!feature) return 'feature not found';
-        (['collect_type', 'name', 'view', 'default_value_id', 'required', 'placeholder', 'capitalize', 'uppercase', 'lowercase', 'trim', 'match', 'max_length', 'min_length', 'max_size', 'max', 'min', 'mime', 'enum']).forEach((attribute) => {
-            //@ts-ignore
-            if (body[attribute]) feature[attribute] = body[attribute];
+
+        (['collect_type', 'name', 'default_value_id', 'required', 'placeholder', 'capitalize', 'uppercase', 'lowercase', 'trim', 'match', 'max_length', 'min_length', 'max_size', 'max', 'min', 'mime', 'enum']).forEach((a) => {
+            if (body[a]) (feature as any)[a] = body[a];
         });
+
         const urls: any = {};
 
         for (const a of ['icon'] as const) {
+            if (!body[a]) continue;
             urls[a] = await updateFiles({
                 request,
                 table_name: "features",
@@ -76,7 +91,6 @@ export default class FeaturesController {
                 lastUrls: feature[a] || '[]',
                 newPseudoUrls: body[a],
                 options: {
-
                     throwError: true,
                     min: 1,
                     max: 7,
@@ -86,69 +100,49 @@ export default class FeaturesController {
                 },
             });
             feature[a] = JSON.stringify(urls[a]);
-
         }
 
         await feature.save();
-        console.log(feature);
 
-        return {
-            ...feature.$attributes,
-            ...urls
-        }
-    }
-
-    async get_feature({ request }: HttpContext) {
-        const feature_id = request.param('id');
-        const feature = await Feature.find(feature_id);
-        if (!feature) return "ERROR feature not found";
-        return feature.$attributes
+        return Feature.parseFeature(feature)
     }
 
     async get_features({ request }: HttpContext) {
-        let { page, limit , order_by , text } = paginate(request.qs() as { page: number | undefined, limit: number | undefined, catalog_id: string } & { [k: string]: any });
+        let { page, limit, order_by, text, feature_id, store_id } = paginate(request.qs() as { page: number | undefined, limit: number | undefined, catalog_id: string } & { [k: string]: any });
+        console.log( page, limit, order_by, text, feature_id, store_id);
         
-        let query = db.query().from(Feature.table).select('*')
+        let query = db.query().from(Feature.table).select('*').where('store_id', store_id);
         if (text) {
-            const like = `%${(text as string).split('').join('%')}%`;
-            if((text as string).startsWith('#')){
-                query = query.andWhereLike('id', like);
-            }else{
+            const t = text as string
+            const v = `%${t.split('').join('%')}%`;
+            if ((t).startsWith('#')) {
+                query = query.whereLike('id', `%${t.replaceAll('#', '')}%`);
+            } else {
                 query = query.andWhere((q) => {
-                    q.whereLike('id', like).orWhereLike('name', like);
+                    q.whereLike('name', v)
                 });
             }
-           
+
         }
-        //consolider le order_by
-        if (order_by) {
-            if (order_by == 'date_asc') query = query.orderBy("products.created_at", "asc");
-            else if (order_by == 'date_desc') query = query.orderBy("products.created_at", "desc");
-            else {
-                const o =  (order_by as string) 
-                const c = o.substring(0, o.lastIndexOf('_'));
-                const m = o.substring(o.lastIndexOf('_') + 1, o.length) as any;
-                query = query.orderBy(c, m);
-            }
+        if (feature_id) {
+            query = query.andWhere('id', feature_id);
         }
-        const total = Math.max((await query).length ,1);
-        let pages = Math.ceil(total/limit);
-        page = pages<page? pages:page;
-        query = query.limit(limit).offset((page - 1) * limit);
-        
-       console.log(limit);
-         return {
-            page,
-            limit,
-            total:total,
-            list:await query
+        const a = await limitation(query, page, limit, order_by)
+        return {
+            ...a.paging,
+            list: (await query).map(v => Feature.parseFeature(v))
         }
     }
 
-    async delete_feature({ request }: HttpContext) {
+    async delete_feature({ request, auth }: HttpContext) {
+        const user = await auth.authenticate();
         const feature_id = request.param('id');
+        const feature = await Feature.find(feature_id);
+        if (!feature) throw new Error("Feature not found");
+        if (!UserStore.isStoreManagerOrMore(user.id, feature.store_id)) throw new Error("PREMISSION REQUIRED");
+
         await deleteFiles(feature_id);
-        await db.rawQuery('delete from `features` where `id` = :id;',{id:feature_id});
+        await db.rawQuery('delete from `features` where `id` = :id;', { id: feature_id });
         return {
             isDeleted: true,
         }
@@ -156,41 +150,40 @@ export default class FeaturesController {
 
     ///////////////////////////////////////////
 
-    async add_features_to_product({ request }: HttpContext) {
-        const { product_id, features_id } = request.body();
+    async add_feature_to_product({ request, auth }: HttpContext) {
+        const { product_id, feature_id ,no_list } = request.body();
         const product = await Product.find(product_id);
-        if (!product) return 'product not found';
-        const pivots_fitures = (await PivotProductsFeature.query().where('product_id', product_id).andWhereIn('feature_id', features_id)).map(p => p.feature_id);
+        if (!product) throw new Error('Product not found');
+        const user = await auth.authenticate();
+        if (!UserStore.isStoreManagerOrMore(user.id, product.store_id)) throw new Error("PREMISSION REQUIRED");
 
-        const ids = (features_id as string[]).filter(f => !pivots_fitures.includes(f));
+        const existingPivot = (await PivotProductsFeature.query().where('product_id', product_id).andWhere('feature_id', feature_id || '').limit(1))[0]
 
-        const promises = ids.map((feature_id) => new Promise(async (rev) => {
-            await PivotProductsFeature.create({
-                feature_id,
-                product_id
-            })
-            rev(null);
-        }))
-        await Promise.allSettled(promises);
-        const features = await FeaturesController._get_features_of_product({ product_id })
+        if (existingPivot) throw new Error("This Feature is already binded to this product");
+
+        await PivotProductsFeature.create({
+            feature_id,
+            product_id
+        });
+
+        let features
+        if(!no_list)features = await FeaturesController._get_features_of_product({ product_id })
         return {
-            ...product.$attributes,
+            ...Product.clientProduct(product),
             features
         }
     }
-    async remove_features_to_product({ request }: HttpContext) {
-        const { product_id, features_id } = request.body();
-        try {
-            (features_id as string[]).forEach(async (feature_id) => {
+    async remove_features_to_product({ request, auth }: HttpContext) {
+        const { product_id, feature_id } = request.body();
+        const product = await Product.find(product_id);
+        if (!product) throw new Error('Product not found');
+        const user = await auth.authenticate();
+        if (!UserStore.isStoreManagerOrMore(user.id, product.store_id)) throw new Error("PREMISSION REQUIRED");
 
-                await db.rawQuery(`delete from ${PivotProductsFeature.table} where product_id = ? and feature_id = ?`, [
-                    product_id,
-                    feature_id
-                ]);
-            });
-        } catch (error) {
-            return error.message
-        }
+        await db.rawQuery(`delete from ${PivotProductsFeature.table} where product_id = ? and feature_id = ?`, [
+            product_id,
+            feature_id
+        ]);
         return {
             isDeleted: true
         }
@@ -198,42 +191,41 @@ export default class FeaturesController {
 
     async get_features_of_product({ request }: HttpContext) {
         const { product_id, page, limit } = request.qs();
-        console.log(product_id, request.qs());
-
         return FeaturesController._get_features_of_product({ product_id, page, limit })
     }
 
     public static async _get_features_of_product({ product_id, page, limit }: { product_id: any, page?: any, limit?: any, }) {
-        if (!product_id) return "product_id is undefined"
-        let features = [];
-        try {
-            features = await db.query().from(PivotProductsFeature.table).select("*")
-                .innerJoin('features', 'features.id', 'feature_id').where('product_id', product_id);
-        } catch (error) {
-            return 'product_id don\'t exist';
-        }
+        if (!product_id) throw new Error("product_id is undefined");
+
+        let query = db.query().from(PivotProductsFeature.table).select("*")
+            .innerJoin('features', 'features.id', 'feature_id').where('product_id', product_id);
+        const l = await limitation(query, page, limit);
+        let features = await l.query;
         const promises = features.map((feature) => new Promise(async (rev) => {
-            const values = await db.query().from('f_values').select('*').where('feature_id', feature.id);
+            const productFeatureComponents = await db.query().from(ProductFeatureComponent.table).select('*').join(Component.table, 'components.id', 'component_id').where('feature_id', feature.id).andWhere('product_id', product_id);
             rev({
-                ...feature,
-                values// : values.
+                ...Feature.parseFeature(feature),
+                components: productFeatureComponents.map(c=>Component.parseComponent(c))
             })
         }))
-        return (await Promise.allSettled(promises)).map(m => (m as any).value)
+        return {
+            ...l.paging,
+            list: (await Promise.allSettled(promises)).map(m => (m as any).value)
+        }
     }
 
     async get_products_of_feature({ request }: HttpContext) {
-        const { feature_id, page, limit } = request.qs();
-        if (!feature_id) return "feature_id is undefined"
-        let products = []
-        try {
-            products = await db.query().from(PivotProductsFeature.table).select("*")
-                .innerJoin('products', 'products.id', 'product_id').where('feature_id', feature_id).limit(limit).offset((page - 1) * limit);;
+        const { feature_id, page, limit, order_by } = request.qs();
+        if (!feature_id) throw new Error("eature_id is undefined");
+        
+        let query = db.query().from(PivotProductsFeature.table).select("*")
+            .innerJoin('products', 'products.id', 'product_id').where('feature_id', feature_id);
 
-        } catch (error) {
-            return 'feature not found';
+        let l = await limitation(query, page, limit); 
+        return {
+            ...l.paging,
+            list : await l.query
         }
-        return products
     }
 
 }

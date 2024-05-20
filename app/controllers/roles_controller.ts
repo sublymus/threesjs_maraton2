@@ -20,8 +20,9 @@ export default class RolesController {
         let query = db.query()
             .from(Role.table)
             .select('*')
-        if (store_id && store_id) {
-            query = query.andWhereLike('store_id', store_id).andWhere('store_id', store_id);
+            
+        if (store_id) {
+            query = query.andWhere('store_id', store_id);
         }
 
         if(role_id){

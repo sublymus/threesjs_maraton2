@@ -107,45 +107,26 @@ export function moveFile({
     try {
       let fileName = ''
       let stat: sharp.Metadata | undefined;
-      let ext= file.clientName
-      ext = ext.lastIndexOf('.')+1< ext.length ?ext.substring(ext.lastIndexOf('.')+1,ext?.length) : 'zip'
+      let ext = file.clientName
+      ext = ext.lastIndexOf('.') + 1 < ext.length ? ext.substring(ext.lastIndexOf('.') + 1, ext?.length) : 'zip'
       fileName = `${Date.now().toString(32)}_${Math.round(
         Math.random() * 10e6
       ).toString(36)}${count}_${table_name}_${column_name}_${table_id}.${ext}`;
 
       const path = `${env.get("FILE_STORAGE_PATH")}/${fileName}`;
       const url = `${env.get("FILE_STORAGE_URL")}/${fileName}`;
+      console.log({ path, url });
 
       if (compress && compress == 'img') {
-        let sharpOBJ = sharp(file.tmpPath);
-        stat = await sharp(file.tmpPath).metadata();
-        let iw = 0;
-        let ih = 0;
-        let a = 1;
-        const c = 1280;
-        let requiredResize = false;
-        if (stat) {
-          if (stat.height && stat.width) {
-            requiredResize = (stat.width > 1920 || stat.height > 1920)
-            a = stat.width / stat.height
-            if (a > 1) {
-              iw = c;
-              ih = c / a;
-            } else {
-              ih = c;
-              iw = a * c
-            }
-          }
-        }
 
-        iw = Math.trunc(iw);
-        ih = Math.trunc(ih);
-        if (requiredResize) {
-          sharpOBJ = sharpOBJ.resize(iw ? {
-            width: iw,
-            height: ih
-          } : c)
-        }
+        let sharpOBJ = sharp(file.tmpPath);
+
+        // if (requiredResize) {
+        //   sharpOBJ = sharpOBJ.resize(iw ? {
+        //     width: iw,
+        //     height: ih
+        //   } : c)
+        // }
         sharpOBJ = sharpOBJ.webp({ quality: 90 })
         // .composite([
         //   {
@@ -154,23 +135,23 @@ export function moveFile({
         //     left: iw - lw,
         //   },
         // ])
-        
+
         sharpOBJ.toFile(path, () => {
           rev(url)
         });
-      }else if(!compress || compress == 'none'){
-       await file.move(env.get("FILE_STORAGE_PATH"),{
-        name:fileName,
-        overwrite:true,
-       });
-       rev(url);
-      }else if (compress && compress == 'zip'){
+      } else if (!compress || compress == 'none') {
+        await file.move(env.get("FILE_STORAGE_PATH"), {
+          name: fileName,
+          overwrite: true,
+        });
+        rev(url);
+      } else if (compress && compress == 'zip') {
         throw new Error(' compress ==> ZIP      not implemented');
       }
 
     } catch (error) {
       console.log(error.message);
-      
+
       rej(null);
     }
   });
