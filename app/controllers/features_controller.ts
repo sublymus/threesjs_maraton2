@@ -75,7 +75,7 @@ export default class FeaturesController {
         const feature = await Feature.find(body.feature_id);
         if (!feature) return 'feature not found';
 
-        (['collect_type', 'name', 'default_value_id', 'required', 'placeholder', 'capitalize', 'uppercase', 'lowercase', 'trim', 'match', 'max_length', 'min_length', 'max_size', 'max', 'min', 'mime', 'enum']).forEach((a) => {
+        (['collect_type', 'name', 'default_value', 'required', 'placeholder', 'capitalize', 'uppercase', 'lowercase', 'trim', 'match', 'max_length', 'min_length', 'max_size', 'max', 'min', 'mime', 'enum']).forEach((a) => {
             if (body[a]) (feature as any)[a] = body[a];
         });
 

@@ -53,8 +53,11 @@ router.post('/create_component', [ComponentController,'create_component']);
 router.get('/get_components', [ComponentController,'get_components']);
 router.put('/update_component', [ComponentController,'update_component']);
 router.delete('/delete_component/:id', [ComponentController,'delete_component']);
+//get_product_feature_components
 router.post('/set_product_feature_component', [ComponentController,'set_product_feature_component']);
+router.get('get_product_feature_components',[ComponentController,'get_product_feature_components'])
 router.put('/update_product_feature_component', [ComponentController,'update_product_feature_component']);
+router.delete('/detete_product_feature_component/:id', [ComponentController,'detete_product_feature_component']);
 //Store
 router.post('/create_store', [StoresController,'create_store']);
 router.post('/add_collaborator',[StoresController,'add_collaborator'])
@@ -98,6 +101,7 @@ router.delete('/delete_message/:id',[MessagesController,'delete_message'])
 router.post('/create_command',[CommandsController,'create_command'])
 router.get('/get_commands',[CommandsController,'get_commands'])
 router.put('/update_command',[CommandsController,'update_command'])
+router.put('/client_confirm_command',[CommandsController,'client_confirm_command'])
 router.delete('/delete_command/:id',[CommandsController,'delete_command'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`,({params,response})=>{

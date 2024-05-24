@@ -21,6 +21,9 @@ export default class ProductFeatureComponent extends BaseModel {
   declare unity: string
 
   @column()
+  declare is_default: boolean
+
+  @column()
   declare store_id : string
 
   @column()

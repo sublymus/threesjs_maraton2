@@ -1,7 +1,7 @@
 import Component from '#models/component';
 import type { HttpContext } from '@adonisjs/core/http'
 import { v4 } from 'uuid';
-import { paginate } from './Tools/Utils.js';
+import { limitation, paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import { createFiles } from './Tools/FileManager/CreateFiles.js';
@@ -149,7 +149,7 @@ export default class ComponentController {
 
 
     async set_product_feature_component({ request, auth }: HttpContext) {
-        const { product_id, feature_id, component_id, price, unity, devise } = request.body();
+        const { product_id, feature_id, component_id, price, unity, devise,is_default } = request.body();
 
         const product = await Product.find(product_id);
         if (!product) throw new Error("Product Not Found");
@@ -169,6 +169,7 @@ export default class ComponentController {
             price,
             unity,
             devise,
+            is_default:!!is_default,
             store_id: product.store_id
         });
         return {
@@ -186,7 +187,21 @@ export default class ComponentController {
         if (!product) throw new Error("Product Not Found");
         const user = await auth.authenticate();
         if (!UserStore.isStoreManagerOrMore(user.id, product.store_id)) throw new Error("PREMISSION REQUIRED");
-        ['price', 'unity', 'devise'].filter((f) => {
+        if(body.is_default){
+            const  default_values = await db.from(ProductFeatureComponent.table)
+            .select('id')
+            .where('product_id', productFeatureComponent.product_id)
+            .andWhere('feature_id', productFeatureComponent.feature_id)
+            .andWhere('is_default', true);
+            const pfc  = await ProductFeatureComponent.findMany(default_values.map(e=>e.id));
+            for (const p of pfc) {
+                p.is_default = false;
+                await p.save();
+            }
+            productFeatureComponent.is_default = !!body.is_default;
+        }
+        if(body.price) productFeatureComponent.price = Number(body.price);
+        ['unity', 'devise'].filter((f) => {
             if (!body[f]) return;
             (productFeatureComponent as any)[f] = body[f]
         });
@@ -194,7 +209,7 @@ export default class ComponentController {
         return productFeatureComponent.$attributes
     }
     async get_product_feature_components({ request }: HttpContext) {
-        const { product_id, feature_id, component_id, price_min, price_max, unity, devise, store_id } = request.param('id');
+        const {page,limit ,product_id, feature_id, component_id, price_min, price_max, unity, devise, store_id , is_default} = request.qs();
         let query = db.from(ProductFeatureComponent.table)
             .select('*')
         if (store_id) {
@@ -217,10 +232,17 @@ export default class ComponentController {
         if (unity) {
             query = query.andWhere('unity', unity);
         }
+        if (is_default) {
+            query = query.andWhere('is_default', !!is_default);
+        }
         if (devise) {
             query = query.andWhere('devise', devise);
         }
-
+        const l = await limitation(query,page,limit)
+        return {
+            ...l.paging,
+            list : await l.query
+        }
     }
     async detete_product_feature_component({ request, auth }: HttpContext) {
         const { product_id, feature_id, component_id, price, unity, devise } = request.param('id');

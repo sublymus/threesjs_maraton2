@@ -13,6 +13,7 @@ export default class extends BaseSchema {
       table.integer('price')
       table.string('unity', 10)
       table.string('devise',10)
+      table.boolean('is_default')
       table.timestamp('created_at')
       table.timestamp('updated_at')
     })

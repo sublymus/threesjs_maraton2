@@ -195,8 +195,6 @@ export default class ProductsController {
         } else {
             query.andWhere('products.status', Product.STATUS.VISIBLE)
         }
-        console.log(await query);
-         
         if (category_id) {
             query = query.where('category_id', category_id);
         }
@@ -228,7 +226,6 @@ export default class ProductsController {
     
         const p = await limitation(query, page, limit, order_by)
         const products = await p.query;
-        console.log(products);
         
         if (is_features_required) {
             const promises = products.map((product) => new Promise(async (rev) => {
@@ -240,8 +237,6 @@ export default class ProductsController {
                 }
             }))
             const fullProduct = (await Promise.allSettled(promises)).map(m => (m as any).value);
-            console.log({fullProduct});
-            
             return {
                 ...p.paging,
                 list: fullProduct,
@@ -256,8 +251,6 @@ export default class ProductsController {
 
     async delete_product({ request, auth }: HttpContext) {
         const product_id: string = request.param('id');
-        
-        console.log({product_id});
         
         const product = await Product.find(product_id);
         if(!product) throw new Error('Produt Not Found');
