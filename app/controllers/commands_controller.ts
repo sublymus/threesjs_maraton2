@@ -20,7 +20,8 @@ export default class CommandsController {
             status: Command.CommandEnum.CART,
             quantity,
             store_id: product.store_id,
-            user_id: user.id
+            user_id: user.id,
+            collected_features
         });
         // cree les collected featuure product, feature, component
         return {
@@ -100,7 +101,7 @@ export default class CommandsController {
             query = query.andWhere('commands.status', '!=', no_status);
         }
 
-        const l = await limitation(query, page, limit);
+        const l = await limitation(query, page, limit, 'commands.created_at_desc');
         return {
             ...l.paging,
             list: (await l.query).map(m => Product.clientProduct(m))

@@ -6,16 +6,10 @@ class World {
     localLoader;
 
     dependencies = {
-        path: {
-            THREE: '/three/build/three.module.js',
-            RGBELoader: '/three/examples/jsm/loaders/RGBELoader.js',
-            OrbitControls: '/three/examples/jsm/controls/OrbitControls.js'
-        },
         obj: {
             THREE: null,
             WorldManager: null,
-            RGBELoader: null,
-            OrbitControls: null
+            ADDON: null,
         }
     }
     WorldManager;
@@ -30,10 +24,10 @@ class World {
         return this.dependencies;
     }
     init = (objDependencies, renderer , WorldManager) => {
-        const { THREE,RGBELoader, OrbitControls } = objDependencies;
-        this.dependencies.obj.OrbitControls = OrbitControls;
+        const { THREE,ADDON } = objDependencies;
+        console.log({THREE, ADDON});
+        this.dependencies.obj.ADDON = ADDON;
         this.dependencies.obj.THREE = THREE;
-        this.dependencies.obj.RGBELoader = RGBELoader;
         this.WorldManager =WorldManager;
 
         this.scene = new this.dependencies.obj.THREE.Scene();
@@ -41,18 +35,14 @@ class World {
         this.camera.position.set(7, 7, 7);
         this.camera.lookAt(0, 0, 0);
         this.scene = new this.dependencies.obj.THREE.Scene();
-
-        const setTexture = (texture) => {
+        const path = '/src/World/images/royal_esplanade_1k.hdr';
+        const r = new this.dependencies.obj.ADDON.RGBELoader()
+        r.load(path, (texture) => {
             texture.mapping = this.dependencies.obj.THREE.EquirectangularReflectionMapping;
             this.scene.background = texture;
             this.scene.environment = texture;
-        }
-
-        const path = '/src/World/images/royal_esplanade_1k.hdr';
-
-        this.WorldManager.loadCache(new this.dependencies.obj.RGBELoader(), path, setTexture)
-
-        this.localLoader.init(objDependencies);
+        })
+       this.localLoader.init(objDependencies);
 
         this.localLoader.getModel().then((model) => {
             this.scene.add(model);
@@ -63,7 +53,7 @@ class World {
             (this.camera).updateProjectionMatrix();
         })
 
-        this.controls = new this.dependencies.obj.OrbitControls(this.camera, renderer.domElement)
+        this.controls = new this.dependencies.obj.ADDON.OrbitControls(this.camera, this.WorldManager.tactil.getView())
         this.controls.target.z = 0;
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
