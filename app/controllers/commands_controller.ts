@@ -30,7 +30,7 @@ export default class CommandsController {
         }
     }
 
-    async client_confirm_command ({ request, auth }: HttpContext){
+    async client_confirm_command ({  auth }: HttpContext){
         const user = await auth.authenticate();
         const commands_ids = await db.from(Command.table).select('id').andWhere('user_id', user.id).andWhere('status',Command.CommandEnum.CART);
         const commands = (await Command.findMany( commands_ids.map(c=>c.id)));
@@ -43,7 +43,7 @@ export default class CommandsController {
         }
     }
     async update_command({ request, auth }: HttpContext) {
-        const { command_id, quantity, status, collectedFeatures } = request.body();
+        const { command_id, quantity, status } = request.body();
         const user = await auth.authenticate()
         
         const command = await Command.find(command_id);
@@ -71,7 +71,8 @@ export default class CommandsController {
     }
 
     async get_commands({ request, auth }: HttpContext) {
-        const { limit, page, status, no_status, user_id, store_id } = await paginate(request.qs() as any);
+        const { limit, page, status, no_status, user_id, store_id, product_id } = await paginate(request.qs() as any);
+        
         const user = await auth.authenticate();
         let query = db.from(Command.table)
             .where('commands.store_id', store_id)
@@ -83,15 +84,13 @@ export default class CommandsController {
             .select('commands.quantity')
             .select('commands.price')
             .select('commands.payment_id')
+            .select('commands.user_id')
             .select('products.images')
             .select('products.title')
             .select('products.stock')
             .select('product_id')
-        if (user_id && (await UserStore.isStoreManagerOrMore(store_id))) {
+        if (user_id && (await UserStore.isStoreManagerOrMore(user.id,store_id))) {
             query = query.andWhere('user_id', user_id);
-            if (status) {
-                query = query.andWhere('status', status);
-            }
         } else {
             query = query.andWhere('user_id', user.id);
         }
@@ -101,7 +100,12 @@ export default class CommandsController {
             query = query.andWhere('commands.status', '!=', no_status);
         }
 
+        if(product_id){
+            query = query.andWhere('products.id', product_id);
+        }
+
         const l = await limitation(query, page, limit, 'commands.created_at_desc');
+        
         return {
             ...l.paging,
             list: (await l.query).map(m => Product.clientProduct(m))

@@ -13,28 +13,28 @@ export default class DiscussionController {
 
   public async get_discussions({ request, auth }: HttpContext) {
     // on recus tout les messages
-    const { blocked, store_id, discussion_id , collaborator_id } = request.qs();
+    const { blocked, store_id, discussion_id, collaborator_id } = request.qs();
 
     const user = await auth.authenticate();
 
     let query = db.from(Discussion.table)
       .select("*");
-      if(collaborator_id){
-        query.where((p) => {
-          p.where("creator_id", user.id)
-            .andWhere("receiver_id", collaborator_id)
-        }).orWhere((p) => {
-          p.where("creator_id", collaborator_id)
-            .andWhere("receiver_id", user.id)
-        })
-      }else{
-        query.where((q) => {
-          q.where("creator_id", user.id)
-            .orWhere("receiver_id", user.id)
-        }).andWhere('table_id', store_id)
+    if (collaborator_id) {
+      query.where((p) => {
+        p.where("creator_id", user.id)
+          .andWhere("receiver_id", collaborator_id)
+      }).orWhere((p) => {
+        p.where("creator_id", collaborator_id)
+          .andWhere("receiver_id", user.id)
+      })
+    } else {
+      query.where((q) => {
+        q.where("creator_id", user.id)
+          .orWhere("receiver_id", user.id)
+      }).andWhere('table_id', store_id)
         .orderBy("updated_at", "desc");
-      }
-      
+    }
+
     if (discussion_id) query = query.andWhere('id', discussion_id).limit(1)
     const ds = await query;
     const ds2 = ds.filter(f => f.deleted != user.id);
@@ -54,9 +54,13 @@ export default class DiscussionController {
       })
     }));
 
-    const discussions = (await Promise.allSettled(promises)).filter(f => f.status == 'fulfilled').map(m => (m as any).value)
-    console.log({discussions});
-    
+    const discussions = (await Promise.allSettled(promises))
+      .filter(f => f.status == 'fulfilled')
+      .map(m => (m as any).value as Discussion)
+      .sort((a, b) => ((a as any ).last_message.created_at) > ((b as any ).last_message.created_at)?-1:1
+      )
+    console.log({ discussions });
+
     if (blocked == 'no') {
       return discussions.filter(f => !f.blocked?.includes(user.id));
     } if (blocked == 'only') {
@@ -94,13 +98,15 @@ export default class DiscussionController {
       }
       const other_att = existingDiscussion.receiver_id == user.id ? 'creator' as const : 'receiver' as const;
       const me = existingDiscussion.receiver_id == user.id ? 'receiver' as const : 'creator' as const;
-      transmit.broadcast(user.id,{new_discussion:{
-        ...existingDiscussion.$attributes,
-        receiver: User.ParseUser(receiver),
-        creator: User.ParseUser(user),
-        unchecked_count: 0,
-        id,
-      }})
+      transmit.broadcast(user.id, {
+        new_discussion: {
+          ...existingDiscussion.$attributes,
+          receiver: User.ParseUser(receiver),
+          creator: User.ParseUser(user),
+          unchecked_count: 0,
+          id,
+        }
+      })
       return {
         ...existingDiscussion.$attributes,
         other: User.ParseUser(receiver),
@@ -118,15 +124,15 @@ export default class DiscussionController {
       table_id: store_id,
       table_name: Store.table,
     })
-    const disco= {
+    const disco = {
       ...discussion.$attributes,
       receiver: User.ParseUser(receiver),
       creator: User.ParseUser(user),
       unchecked_count: 0,
       id,
     }
-    transmit.broadcast(user.id,{new_discussion:disco})
-    transmit.broadcast(receiver_id,{new_discussion:disco})
+    transmit.broadcast(user.id, { new_discussion: disco })
+    transmit.broadcast(receiver_id, { new_discussion: disco })
     return {
       ...discussion.$attributes,
       other: User.ParseUser(receiver),

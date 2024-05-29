@@ -15,7 +15,7 @@ import Component from '#models/component';
 
 export default class FeaturesController {
     async create_feature({ request, auth }: HttpContext) {
-        const { store_id, collect_type, name, _enum, default_value, required, placeholder, capitalize, uppercase, lowercase, trim, match, max_length, min_length, max_size, max, min, mime, values } = request.body();
+        const { store_id, collect_type, name, _enum, default_value, required, placeholder, capitalize, uppercase, lowercase, trim, match, max_length, min_length, max_size, max, min } = request.body();
 
         const user = await auth.authenticate();
         if (!UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error("PREMISSION REQUIRED");
@@ -215,7 +215,7 @@ export default class FeaturesController {
     }
 
     async get_products_of_feature({ request }: HttpContext) {
-        const { feature_id, page, limit, order_by } = request.qs();
+        const { feature_id, page, limit } = request.qs();
         if (!feature_id) throw new Error("eature_id is undefined");
         
         let query = db.query().from(PivotProductsFeature.table).select("*")

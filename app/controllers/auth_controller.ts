@@ -10,6 +10,8 @@ import UserStore from '#models/user_store';
 export default class AuthController {
 
     public async google_connexion({ ally }: HttpContext) {
+        console.log({lol:'lol'});
+        
         return ally.use("google").redirect();
     }
 
@@ -44,7 +46,8 @@ export default class AuthController {
 
     public async google_push_info({ ally, response }: HttpContext) {
         const provider = ally.use('google');
-
+        console.log({google:'google'});
+        
         if (provider.accessDenied()) {
             return "google access was denied";
         }

@@ -12,8 +12,6 @@ type OptionsType = {
   throwError?: boolean;
 };
 
-let isDirExist = false;
-
 export async function createFiles({
   request,
   table_id,
@@ -106,7 +104,6 @@ export function moveFile({
   return new Promise(async (rev, rej) => {
     try {
       let fileName = ''
-      let stat: sharp.Metadata | undefined;
       let ext = file.clientName
       ext = ext.lastIndexOf('.') + 1 < ext.length ? ext.substring(ext.lastIndexOf('.') + 1, ext?.length) : 'zip'
       fileName = `${Date.now().toString(32)}_${Math.round(

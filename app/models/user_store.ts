@@ -34,38 +34,38 @@ export default class UserStore extends BaseModel {
    if(!userStore.id)userStore.id = v4()
   }
 
-  public static async  notClient(user_id:string, store_id:string, premision?:Partial<TypeJsonRole>){
+  public static async  notClient(user_id:string, store_id:string, _premision?:Partial<TypeJsonRole>){
     return (await db.query().from(UserStore.table).select('*').where('user_id', user_id).andWhere('store_id', store_id).whereNot((p) => p.where('type', 'CLIENT')))[0] as UserStore|undefined;
   }
-  public static async  isOwner(user_id:string, store_id:string, premision?:Partial<TypeJsonRole>){
+  public static async  isOwner(user_id:string, store_id:string, _premision?:Partial<TypeJsonRole>){
     return (await db.query().from(Store.table).select('*').where('user_id', user_id).andWhere('store_id', store_id).andWhere('type',USER_TYPE.OWNER).limit(1))[0] as UserStore|undefined;
   }
-  public static async  isCollaborator(user_id:string, store_id:string, premision?:Partial<TypeJsonRole>){
+  public static async  isCollaborator(user_id:string, store_id:string, _premision?:Partial<TypeJsonRole>){
     return (await db.query().from(UserStore.table).select('*').where('user_id', user_id).andWhere('store_id', store_id).andWhere('type',USER_TYPE.COLLABORATOR).limit(1))[0] as UserStore|undefined;
   }
-  public static async  isStoreManager(user_id:string, store_id:string, premision?:Partial<TypeJsonRole>){
+  public static async  isStoreManager(user_id:string, store_id:string, _premision?:Partial<TypeJsonRole>){
     return (await db.query().from(UserStore.table).select('*').where('user_id', user_id).andWhere('store_id', store_id).andWhere((p)=>{
       p.where('type',USER_TYPE.COLLABORATOR).orWhere('type',USER_TYPE.OWNER)
     }).limit(1))[0] as UserStore|undefined;
   }
-  public static async  isModerator(user_id:string, premision?:Partial<TypeJsonRole>){
+  public static async  isModerator(user_id:string, _premision?:Partial<TypeJsonRole>){
     return (await db.query().from(UserStore.table).select('*').where('user_id', user_id).andWhereNull('store_id').andWhere('type',USER_TYPE.MODERATOR).limit(1))[0] as UserStore|undefined;
   }
   public static async  isAdmin(user_id:string){
     return (await db.query().from(UserStore.table).select('*').where('user_id', user_id).andWhereNull('store_id').andWhere('type',USER_TYPE.ADMIN).limit(1))[0] as UserStore|undefined;
   }
 
-  public static async  isSublymusManager(user_id:string ,premision?:Partial<TypeJsonRole>){
+  public static async  isSublymusManager(user_id:string ,_premision?:Partial<TypeJsonRole>){
     return (await db.query().from(UserStore.table).select('*').where('user_id', user_id).andWhereNull('store_id').andWhere((p)=>{
       p.where('type',USER_TYPE.MODERATOR).orWhere('type',USER_TYPE.ADMIN)
     }).limit(1))[0] as UserStore|undefined;
   }
 
-  public static async  isClient(user_id:string, store_id:string, premision?:Partial<TypeJsonRole>){
+  public static async  isClient(user_id:string, store_id:string, _premision?:Partial<TypeJsonRole>){
     return (await db.query().from(UserStore.table).select('*').where('user_id', user_id).andWhere('store_id', store_id).andWhere('type',USER_TYPE.CLIENT).limit(1))[0] as UserStore|undefined;
   }
 
-  public static async  isStoreManagerOrMore(user_id:string, store_id?:string, premision?:Partial<TypeJsonRole>){
+  public static async  isStoreManagerOrMore(user_id:string, store_id?:string, _premision?:Partial<TypeJsonRole>){
     if(store_id){
       const u =  await UserStore.isStoreManager(user_id , store_id);
       if(u){

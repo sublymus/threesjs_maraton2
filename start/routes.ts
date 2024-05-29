@@ -24,8 +24,10 @@ router.get('/global_disconnection',[AuthController,'global_disconnection']);
 //Product
 router.post('/create_product', [ProductsController,'create_product']);
 router.get('/get_products', [ProductsController,'get_products']);
+router.get('/get_client_visited', [ProductsController,'get_client_visited']);
 router.put('/update_product', [ProductsController,'update_product']);
 router.put('/update_view_product', [ProductsController,'update_view_product']);
+router.put('/set_client_visited', [ProductsController,'set_client_visited']);
 router.delete('/delete_product/:id', [ProductsController,'delete_product']);
 //Catlog
 router.post('/create_catalog', [CatalogsController,'create_catalog']);

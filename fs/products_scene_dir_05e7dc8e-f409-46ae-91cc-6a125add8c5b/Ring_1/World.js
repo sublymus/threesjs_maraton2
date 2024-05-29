@@ -25,7 +25,6 @@ class World {
     }
     init = (objDependencies, renderer , WorldManager) => {
         const { THREE,ADDON } = objDependencies;
-        console.log({THREE, ADDON});
         this.dependencies.obj.ADDON = ADDON;
         this.dependencies.obj.THREE = THREE;
         this.WorldManager =WorldManager;
@@ -35,14 +34,18 @@ class World {
         this.camera.position.set(7, 7, 7);
         this.camera.lookAt(0, 0, 0);
         this.scene = new this.dependencies.obj.THREE.Scene();
-        const path = '/src/World/images/royal_esplanade_1k.hdr';
-        const r = new this.dependencies.obj.ADDON.RGBELoader()
-        r.load(path, (texture) => {
+
+        const setTexture = (texture) => {
             texture.mapping = this.dependencies.obj.THREE.EquirectangularReflectionMapping;
             this.scene.background = texture;
             this.scene.environment = texture;
-        })
-       this.localLoader.init(objDependencies);
+        }
+
+        const path = '/src/World/images/royal_esplanade_1k.hdr';
+
+        this.WorldManager.loadCache(new this.dependencies.obj.ADDON.RGBELoader(), path, setTexture)
+
+        this.localLoader.init(objDependencies);
 
         this.localLoader.getModel().then((model) => {
             this.scene.add(model);
