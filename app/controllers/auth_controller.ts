@@ -13,7 +13,7 @@ export default class AuthController {
         console.log({ lol: 'lol' });
 
         return ally.use("google").redirect();
-    }
+    } 
 
     public async disconnection({ auth }: HttpContext) {
         const user = await auth.authenticate();
