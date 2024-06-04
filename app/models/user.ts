@@ -82,3 +82,4 @@ export default class User extends compose(BaseModel, AuthFinder) {
     tokenSecretLength: 40,
   })
 }
+export const  AdminEmails = ['sublymus@gmail.com']

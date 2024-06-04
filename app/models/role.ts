@@ -79,6 +79,23 @@ export const JsonRole = {
   manage_command: '',
 } as const 
 
+
+export const JsonRoleAdmin = {
+  filter_client: '',
+  ban_client: '',
+  filter_collaborator: '',
+  ban_collaborator: '',
+  create_delete_collaborator: '',
+  manage_interface: '',
+  filter_product: '',
+  edit_product: '',
+  create_delete_product: '',
+  manage_scene_product: '',
+  chat_client: '',
+  filter_command: '',
+  manage_command: '',
+} as const 
+
 export type TypeJsonRole = {
   [k in keyof typeof JsonRole]: (typeof JsonRole)[k] extends '' ? boolean : string ;
 }
