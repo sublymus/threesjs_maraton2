@@ -280,7 +280,7 @@ export default class AuthController {
         });
 
         return {
-            ...userStore.$attributes,
+            ...userStore.$attributes, 
             ...User.ParseUser(moderator),
             join_at: userStore.createdAt,
             s_type:userStore.type,
