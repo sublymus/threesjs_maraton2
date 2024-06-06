@@ -3,6 +3,10 @@ import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
 import { v4 } from 'uuid'
 
 export default class Discussion extends BaseModel {
+
+  public static MODERATOR_TO_MODERATOR = 'm_m'
+  public static MODERATOR_TO_COLLABORATOR = 'm_c'
+
   @column({ isPrimary: true })
   declare id: string
 

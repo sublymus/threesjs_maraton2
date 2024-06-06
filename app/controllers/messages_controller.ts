@@ -69,7 +69,7 @@ export default class MessagesController {
     const user = await auth.authenticate();
     
     const context = await contextMap[n].find(context_id);
-    console.log({context_id, user:user.email});
+    // console.log({context_id, user:user.email});
     
     if (!context) throw new Error('Discussion Not Found');
 

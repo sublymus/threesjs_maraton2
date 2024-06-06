@@ -10,8 +10,6 @@ import UserStore from '#models/user_store';
 export default class AuthController {
 
     public async google_connexion({ ally }: HttpContext) {
-        console.log({ lol: 'lol' });
-
         return ally.use("google").redirect();
     } 
 
@@ -207,6 +205,7 @@ export default class AuthController {
             .select('users.created_at as  created_at')
             .select('user_stores.created_at as  join_at')
             .innerJoin(User.table, 'user_id', 'users.id')
+            .whereNull('user_stores.store_id')
             .andWhere((p) => {
                 p.where('user_stores.type', USER_TYPE.MODERATOR).orWhere('user_stores.type', USER_TYPE.ADMIN)
             });
@@ -257,7 +256,7 @@ export default class AuthController {
             moderator = await User.create({
                 email,
                 id: moderator_id,
-                name: 'new Collaborator',
+                name: 'new Moderator',
                 password: moderator_id,
                 photos: JSON.stringify(['/public/_user_img.png']),
                 status: USER_STATUS.NEW

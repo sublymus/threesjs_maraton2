@@ -8,32 +8,43 @@ import db from '@adonisjs/lucid/services/db';
 import Store from '#models/store';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import transmit from '@adonisjs/transmit/services/main';
+import UserStore from '#models/user_store';
 
 export default class DiscussionController {
 
   public async get_discussions({ request, auth }: HttpContext) {
     // on recus tout les messages
-    const { blocked, store_id, discussion_id, collaborator_id } = request.qs();
+    const { blocked, store_id, discussion_id, collaborator_id, context_name } = request.qs() as Record<string, string> & { context: string[] };
+    const user = await auth.authenticate()
+    console.log({ blocked, store_id, discussion_id, collaborator_id, context_name, qs: request.qs() });
+    if (!context_name) throw new Error("Context Not Found");
 
-    const user = await auth.authenticate();
+    if (!store_id && context_name == 'm_m' && !await UserStore.isSublymusManager(user.id)) throw new Error('Permison Required')
 
-    let query = db.from(Discussion.table)
-      .select("*");
+    let query = db.from(Discussion.table).select("*");
     if (collaborator_id) {
-      query.where((p) => {
-        p.where("creator_id", user.id)
-          .andWhere("receiver_id", collaborator_id)
-      }).orWhere((p) => {
-        p.where("creator_id", collaborator_id)
-          .andWhere("receiver_id", user.id)
+      query = query.where(q=>{
+        q.where((p) => {
+          p.where("creator_id", user.id)
+            .andWhere("receiver_id", collaborator_id)
+        }).orWhere((p) => {
+          p.where("creator_id", collaborator_id)
+            .andWhere("receiver_id", user.id)
+        })
       })
     } else {
-      query.where((q) => {
+     query = query.where((q) => {
         q.where("creator_id", user.id)
           .orWhere("receiver_id", user.id)
-      }).andWhere('table_id', store_id)
-        .orderBy("updated_at", "desc");
+      })
     }
+
+    query = query
+      .orderBy("updated_at", "desc");
+    if (Array.isArray(context_name)) query = query.andWhereIn('table_name', context_name)
+    else query = query.andWhere('table_name', context_name)
+    if (store_id) query = query.andWhere('table_id', store_id)
+    else query = query.andWhereNull('table_id')
 
     if (discussion_id) query = query.andWhere('id', discussion_id).limit(1)
     const ds = await query;
@@ -57,9 +68,8 @@ export default class DiscussionController {
     const discussions = (await Promise.allSettled(promises))
       .filter(f => f.status == 'fulfilled')
       .map(m => (m as any).value as Discussion)
-      .sort((a, b) => ((a as any ).last_message.created_at) > ((b as any ).last_message.created_at)?-1:1
+      .sort((a, b) => ((a as any).last_message?.created_at) > ((b as any).last_message?.created_at) ? -1 : 1
       )
-    console.log({ discussions });
 
     if (blocked == 'no') {
       return discussions.filter(f => !f.blocked?.includes(user.id));
@@ -70,27 +80,34 @@ export default class DiscussionController {
   }
 
   public async create_discussion({ auth, request }: HttpContext) {
-    const { receiver_id, store_id } = request.body();
+    let { receiver_id, store_id, context_name } = request.body();
+    const user = await auth.authenticate();
 
     const store = await Store.find(store_id || '');
-    if (!store) throw new Error("Store Not Found");
+    if (!store && !UserStore.isSublymusManager(user.id) && !UserStore.isSublymusManager(receiver_id)) throw new Error("Store Not Found And Premission Required");
 
     const receiver = await User.find(receiver_id);
     if (!receiver) throw new Error('Receiver Not Found');
 
-    const user = await auth.authenticate();
     if (receiver_id == user.id) throw new Error("You Can't chat with you self");
 
     const id = v4();
-
+    const table_name = !store_id ? 'm_m' : context_name == 'm_c' ? 'm_c' : Store.table
     const existingDiscussion = (await Discussion.query()
-      .select("*").where((p) => {
-        p.where("creator_id", user.id)
-          .andWhere("receiver_id", receiver_id)
-      }).orWhere((p) => {
-        p.where("creator_id", receiver_id)
-          .andWhere("receiver_id", user.id)
-      }).andWhere('table_id', store_id).limit(1))[0];
+      .select("*")
+      .where((q) => {
+        q.where((p) => {
+          p.where("creator_id", user.id)
+            .andWhere("receiver_id", receiver_id)
+        })
+          .orWhere((p) => {
+            p.where("creator_id", receiver_id)
+              .andWhere("receiver_id", user.id)
+          })
+      })
+      .andWhere('table_id', store_id || null)
+      .andWhere('table_name', table_name)
+      .limit(1))[0];
     if (existingDiscussion) {
       if (existingDiscussion.deleted == user.id) {
         existingDiscussion.deleted = null;
@@ -112,7 +129,7 @@ export default class DiscussionController {
         other: User.ParseUser(receiver),
         other_att,
         last_message: (await db.query().from(Message.table).select('*').where('table_id', existingDiscussion.id).orderBy('created_at', 'desc').limit(1))[0],
-        unchecked_count: (await db.query().from(Message.table).select('id').where('table_id', existingDiscussion.id).andWhere('user_id', receiver.id).andWhere('created_at', '>', (existingDiscussion[`${me}_opened_at`].toString() || 0))).length,
+        unchecked_count: (await db.query().from(Message.table).select('id').where('table_id', existingDiscussion.id).andWhere('user_id', receiver.id).andWhere('created_at', '>', (existingDiscussion[`${me}_opened_at`]?.toString() || 0))).length,
       }
     }
 
@@ -122,7 +139,7 @@ export default class DiscussionController {
       receiver_id,
       creator_opened_at: DateTime.now(),
       table_id: store_id,
-      table_name: Store.table,
+      table_name: table_name,
     })
     const disco = {
       ...discussion.$attributes,
