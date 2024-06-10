@@ -1,7 +1,7 @@
 //@ts-nocheck
 import * as THREE from "three";
 // import GUI from "three/examples/jsm/libs/lil-gui.module.min.js";
-// import Stats from "three/examples/jsm/libs/stats.module.js";
+// import Stats from "three/examples/jsm/libs/stats.module.js"; 
 import * as ADDON from 'three/addons'
 import { Tactil } from "../Tools/Tactil";
 import { Feature } from "../DataBase"; 
