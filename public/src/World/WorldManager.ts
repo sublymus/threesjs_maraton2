@@ -27,7 +27,7 @@ export interface AbstractWorld {
 };
 
 
-
+ 
 const params = {
     exposure: 2.0,
     toneMapping: 'AgX' as const,
