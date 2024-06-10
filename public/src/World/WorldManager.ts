@@ -5,7 +5,7 @@ import * as THREE from "three";
 import * as ADDON from 'three/addons'
 import { Tactil } from "../Tools/Tactil";
 import { Feature } from "../DataBase"; 
-
+ 
 export const WorlGui: any = null//new GUI();
 export interface AbstractLocalLoader {
     showFeature(uuid: string): void;  
