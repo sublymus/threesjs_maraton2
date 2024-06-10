@@ -115,7 +115,7 @@ router.put('/client_confirm_command', [CommandsController, 'client_confirm_comma
 router.delete('/delete_command/:id', [CommandsController, 'delete_command'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`, ({ params, response }) => {
-    const fileName = `/${(params['*'] as string[]).join('/')}`
+    const fileName = `/${(params['*'] as string[]).join('/')}` 
     response.download(`${env.get("FILE_STORAGE_PATH")}${fileName}`);
 });
 router.get('/public/*', ({ params, response }) => {
