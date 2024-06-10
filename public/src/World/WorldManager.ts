@@ -33,7 +33,7 @@ const params = {
     toneMapping: 'AgX' as const,
     blurriness: 0.3, 
     intensity: 1.0,
-};
+}; 
 
 const toneMappingOptions = {
     None: THREE.NoToneMapping,
