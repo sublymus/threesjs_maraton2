@@ -31,7 +31,7 @@ export interface AbstractWorld {
 const params = {
     exposure: 2.0,
     toneMapping: 'AgX' as const,
-    blurriness: 0.3,
+    blurriness: 0.3, 
     intensity: 1.0,
 };
 
