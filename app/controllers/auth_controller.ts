@@ -192,9 +192,9 @@ export default class AuthController {
             list: (await users.query).map(u => User.ParseUser(u))
         }
     }
-    async get_moderators({ request , auth }: HttpContext) {
+async get_moderators({ request /*, auth*/ }: HttpContext) {
         let { page, limit, name, email, user_id, phone, order_by, text } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
-        const user = await auth.authenticate();
+        // const user = await auth.authenticate();
         // if (!await UserStore.isSublymusManager(user.id)) throw new Error('Permission Required');
 
         let query = db.query()
@@ -210,7 +210,7 @@ export default class AuthController {
                 p.where('user_stores.type', USER_TYPE.MODERATOR).orWhere('user_stores.type', USER_TYPE.ADMIN)
             });
         if (user_id) {
-            query = query.whereLike('users.id', `%${user_id}%`);
+            query = query.whereLike('users.id', user_id);
         } else {
             if (text) {
                 const t = text as string

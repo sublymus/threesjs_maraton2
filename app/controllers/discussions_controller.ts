@@ -9,57 +9,74 @@ import Store from '#models/store';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
 import transmit from '@adonisjs/transmit/services/main';
 import UserStore from '#models/user_store';
+import { limitation } from './Tools/Utils.js';
 
 export default class DiscussionController {
 
   public async get_discussions({ request, auth }: HttpContext) {
-    // on recus tout les messages
-    const { blocked, store_id, discussion_id, collaborator_id, context_name } = request.qs() as Record<string, string> & { context: string[] };
+    const { /*blocked,*/ discussion_id, other_id, from_id, to_id, page, limit, add_store } = request.qs() as Record<string, any> & { context: string[] };
     const user = await auth.authenticate()
-    console.log({ blocked, store_id, discussion_id, collaborator_id, context_name, qs: request.qs() });
-    if (!context_name) throw new Error("Context Not Found");
+    const isAdmin = await UserStore.isSublymusManager(user.id)
+    if (!from_id && !isAdmin) throw new Error('Permison Required');
+    // if (other_id && !to_id && !await UserStore.isSublymusManager(other_id)) throw new Error('Permison Required')
 
-    if (!store_id && context_name == 'm_m' && !await UserStore.isSublymusManager(user.id)) throw new Error('Permison Required')
-
-    let query = db.from(Discussion.table).select("*");
-    if (collaborator_id) {
-      query = query.where(q=>{
+    let query = db.from(Discussion.table).select("*")
+    if (other_id) {
+      query = query.where((q) => {
         q.where((p) => {
           p.where("creator_id", user.id)
-            .andWhere("receiver_id", collaborator_id)
-        }).orWhere((p) => {
-          p.where("creator_id", collaborator_id)
-            .andWhere("receiver_id", user.id)
+            .andWhere("receiver_id", other_id)
         })
+          .orWhere((p) => {
+            p.where("creator_id", other_id)
+              .andWhere("receiver_id", user.id)
+          })
       })
+        .andWhere(q => {
+          q.where(p => {
+            p.where('from_id', from_id || null)
+              .andWhere('to_id', to_id || null)
+          }).orWhere(p => {
+            p.where('from_id', to_id || null)
+              .andWhere('to_id', from_id || null)
+          })
+        })
     } else {
-     query = query.where((q) => {
-        q.where("creator_id", user.id)
-          .orWhere("receiver_id", user.id)
+      query = query.where((q) => {
+        q.where(p => {
+          p.where("creator_id", user.id)
+            .andWhere('from_id', from_id || null)
+          if (to_id) p.andWhere('to_id', to_id)
+          // else if (isAdmin) p.andWhereNull('to_id')
+        })
+          .orWhere(p => {
+            p.where("receiver_id", user.id)
+              .andWhere('to_id', from_id || null)
+            if (to_id) p.andWhere('from_id', to_id)
+            // else if ( isAdmin) p.andWhereNull('from_id')
+          })
       })
     }
 
-    query = query
-      .orderBy("updated_at", "desc");
-    if (Array.isArray(context_name)) query = query.andWhereIn('table_name', context_name)
-    else query = query.andWhere('table_name', context_name)
-    if (store_id) query = query.andWhere('table_id', store_id)
-    else query = query.andWhereNull('table_id')
+    const l = await limitation(query, page, limit);
+    if (discussion_id) query = l.query.andWhere('id', discussion_id).limit(1)
+    ///where ('delete','!=',user.id)
+    const not_deleted_discussions = (await query).filter(f => f.deleted != user.id);
 
-    if (discussion_id) query = query.andWhere('id', discussion_id).limit(1)
-    const ds = await query;
-    const ds2 = ds.filter(f => f.deleted != user.id);
-    const promises = ds2.map((d) => new Promise(async (rev) => {
+    const promises = not_deleted_discussions.map((d) => new Promise(async (rev) => {
       const creator = (await db.from(User.table).where('id', d.creator_id).limit(1))[0];
       const receiver = (await db.from(User.table).where('id', d.receiver_id).limit(1))[0];
       const other = user.id == receiver.id ? User.ParseUser(creator as any) : User.ParseUser(receiver as any);
 
       const me = user.id == receiver.id ? 'receiver' : 'creator';
       const other_att = user.id == receiver.id ? 'creator' : 'receiver';
+      const store_id = (d.from_id||null)===(from_id||null)?d.to_id:d.from_id;
+      const store = (add_store && store_id) && await Store.find(store_id)
       rev({
         ...d,
         other,
         other_att,
+        store,
         last_message: (await db.query().from(Message.table).select('*').where('table_id', d.id).orderBy('created_at', 'desc').limit(1))[0],
         unchecked_count: (await db.query().from(Message.table).select('id').where('table_id', d.id).andWhere('user_id', other.id).andWhere('created_at', '>', (d[me + '_opened_at'] || 0))).length,
       })
@@ -71,20 +88,34 @@ export default class DiscussionController {
       .sort((a, b) => ((a as any).last_message?.created_at) > ((b as any).last_message?.created_at) ? -1 : 1
       )
 
-    if (blocked == 'no') {
-      return discussions.filter(f => !f.blocked?.includes(user.id));
-    } if (blocked == 'only') {
-      return discussions.filter(f => !!(f.blocked && f.blocked.includes(user.id)));
-    }
-    return discussions;
+    // if (blocked == 'no') {
+    //   return discussions.filter(f => !f.blocked?.includes(user.id));
+    // } if (blocked == 'only') {
+    //   return discussions.filter(f => !!(f.blocked && f.blocked.includes(user.id)));
+    // }
+    return {
+      ...l.paging,
+      list: discussions
+    };
   }
 
   public async create_discussion({ auth, request }: HttpContext) {
-    let { receiver_id, store_id, context_name } = request.body();
+    let { receiver_id, from_id, to_id } = request.body();
     const user = await auth.authenticate();
 
-    const store = await Store.find(store_id || '');
-    if (!store && !UserStore.isSublymusManager(user.id) && !UserStore.isSublymusManager(receiver_id)) throw new Error("Store Not Found And Premission Required");
+    if (!from_id) {
+      if (!UserStore.isSublymusManager(user.id)) throw new Error("Premission Required");
+    } else {
+      const storeFrom = await Store.find(from_id);
+      if (!storeFrom) throw new Error('origin store not found');
+    }
+    if (!to_id) {
+      if (!UserStore.isSublymusManager(receiver_id)) throw new Error("Premission Required");
+    }
+    else {
+      const storeTo = await Store.find(to_id);
+      if (!storeTo) throw new Error('destination store not found');
+    }
 
     const receiver = await User.find(receiver_id);
     if (!receiver) throw new Error('Receiver Not Found');
@@ -92,7 +123,7 @@ export default class DiscussionController {
     if (receiver_id == user.id) throw new Error("You Can't chat with you self");
 
     const id = v4();
-    const table_name = !store_id ? 'm_m' : context_name == 'm_c' ? 'm_c' : Store.table
+
     const existingDiscussion = (await Discussion.query()
       .select("*")
       .where((q) => {
@@ -105,16 +136,24 @@ export default class DiscussionController {
               .andWhere("receiver_id", user.id)
           })
       })
-      .andWhere('table_id', store_id || null)
-      .andWhere('table_name', table_name)
+      .andWhere(q => {
+        q.where(p => {
+          p.where('from_id', from_id || null)
+            .andWhere('to_id', to_id || null)
+        }).orWhere(p => {
+          p.where('from_id', to_id || null)
+            .andWhere('to_id', from_id || null)
+        })
+      })
       .limit(1))[0];
     if (existingDiscussion) {
       if (existingDiscussion.deleted == user.id) {
         existingDiscussion.deleted = null;
         await existingDiscussion.save();
       }
-      const other_att = existingDiscussion.receiver_id == user.id ? 'creator' as const : 'receiver' as const;
       const me = existingDiscussion.receiver_id == user.id ? 'receiver' as const : 'creator' as const;
+      const other_att = existingDiscussion.receiver_id == user.id ? 'creator' as const : 'receiver' as const;
+
       transmit.broadcast(user.id, {
         new_discussion: {
           ...existingDiscussion.$attributes,
@@ -138,8 +177,8 @@ export default class DiscussionController {
       creator_id: user.id,
       receiver_id,
       creator_opened_at: DateTime.now(),
-      table_id: store_id,
-      table_name: table_name,
+      from_id,
+      to_id,
     })
     const disco = {
       ...discussion.$attributes,
@@ -148,8 +187,8 @@ export default class DiscussionController {
       unchecked_count: 0,
       id,
     }
-    transmit.broadcast(user.id, { new_discussion: disco })
-    transmit.broadcast(receiver_id, { new_discussion: disco })
+    transmit.broadcast(`${user.id}/${from_id||''}`, { new_discussion: disco })
+    transmit.broadcast(`${receiver_id}/${to_id||''}`, { new_discussion: disco })
     return {
       ...discussion.$attributes,
       other: User.ParseUser(receiver),

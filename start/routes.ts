@@ -123,10 +123,10 @@ router.get('/public/*', ({ params, response }) => {
     response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
 });
 
-router.get('/', ({ params, response }) => {
+router.get('/', ({ response }) => {
     response.download(`${env.get("PUBLIC_PATH")}/index.html`);
 })
-router.get('/*', ({ request, params, response }) => {
+router.get('/*', ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}`
     console.log(params['*'][0]);
 
@@ -168,4 +168,4 @@ setTimeout(async () => {
             console.log(us.$attributes); 
         }
     }
-}, 1000);
+}, 5000);

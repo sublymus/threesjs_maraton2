@@ -129,6 +129,7 @@ export default class StoresController {
     async get_stores({ request, auth }: HttpContext) {
         let { page, limit,text, name, email, description, owner_id, phone, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         const user = await auth.authenticate();
+        
         let query = db.query()
         .from(Store.table)
         .select('*')
@@ -177,7 +178,6 @@ export default class StoresController {
         }
         const stores = await limitation(query, page, limit, order_by)
         const l = ((await stores.query).map(s => Store.ParseStore(s)));
-        console.log(l);
         
         return {
             list: l,

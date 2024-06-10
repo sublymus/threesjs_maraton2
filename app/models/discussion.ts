@@ -11,10 +11,10 @@ export default class Discussion extends BaseModel {
   declare id: string
 
   @column()
-  declare table_name: string | null
+  declare from_id: string | null
   
   @column()
-  declare table_id: string |null
+  declare to_id: string |null
   
   @column()
   declare creator_id: string
