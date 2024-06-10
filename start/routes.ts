@@ -114,28 +114,28 @@ router.put('/update_command', [CommandsController, 'update_command'])
 router.put('/client_confirm_command', [CommandsController, 'client_confirm_command'])
 router.delete('/delete_command/:id', [CommandsController, 'delete_command'])
 
-// router.get(`${env.get("FILE_STORAGE_URL")}/*`, ({ params, response }) => {
-//     const fileName = `/${(params['*'] as string[]).join('/')}`
-//     response.download(`${env.get("FILE_STORAGE_PATH")}${fileName}`);
-// });
-// router.get('/public/*', ({ params, response }) => {
-//     const fileName = `/${(params['*'] as string[]).join('/')}`
-//     response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
-// });
+router.get(`${env.get("FILE_STORAGE_URL")}/*`, ({ params, response }) => {
+    const fileName = `/${(params['*'] as string[]).join('/')}`
+    response.download(`${env.get("FILE_STORAGE_PATH")}${fileName}`);
+});
+router.get('/public/*', ({ params, response }) => {
+    const fileName = `/${(params['*'] as string[]).join('/')}`
+    response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
+});
 
-// router.get('/', ({ response }) => {
-//     response.download(`${env.get("PUBLIC_PATH")}/index.html`);
-// })
-// router.get('/*', ({ params, response }) => {
-//     const fileName = `/${(params['*'] as string[]).join('/')}`
-//     console.log(params['*'][0]);
+router.get('/', ({ response }) => {
+    response.download(`${env.get("PUBLIC_PATH")}/index.html`);
+})
+router.get('/*', ({ params, response }) => {
+    const fileName = `/${(params['*'] as string[]).join('/')}`
+    console.log(params['*'][0]);
 
-//     if (params['*'][0] == 'assets' || params['*'][0] == 'src' || params['*'][0] == 'vite.svg') {
-//         response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
-//     } else {
-//         response.download(`${env.get("PUBLIC_PATH")}/index.html`);
-//     }
-// })
+    if (params['*'][0] == 'assets' || params['*'][0] == 'src' || params['*'][0] == 'vite.svg') {
+        response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
+    } else {
+        response.download(`${env.get("PUBLIC_PATH")}/index.html`);
+    }
+})
 
 
 setTimeout(async () => {
