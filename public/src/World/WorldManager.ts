@@ -11,7 +11,7 @@ export interface AbstractLocalLoader {
     showFeature(uuid: string): void;
     updateFeature(feature: Feature, value: string): void;
     getModel(): Promise<THREE.Object3D>;
-    getDependencies(): Dependencies; 
+    getDependencies(): Dependencies;  
     init(this: AbstractWorld, dependencies: Dependencies['obj']): void
 }
 
