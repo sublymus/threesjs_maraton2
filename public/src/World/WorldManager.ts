@@ -14,7 +14,7 @@ export interface AbstractLocalLoader {
     getDependencies(): Dependencies;  
     init(this: AbstractWorld, dependencies: Dependencies['obj']): void
 }
-
+ 
 export interface AbstractWorld {
     localLoader: AbstractLocalLoader;
     init(this: AbstractWorld, dependencies: Dependencies['obj'], renderer: THREE.WebGLRenderer, world:typeof WorldManager): void
