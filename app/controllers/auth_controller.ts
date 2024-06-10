@@ -44,7 +44,7 @@ export default class AuthController {
 
     public async google_push_info({ ally, response }: HttpContext) {
         const provider = ally.use('google');
-        console.log({ google: 'google' });
+        console.log({ google: 'google_push_info' });
 
         if (provider.accessDenied()) {
             return "google access was denied";
