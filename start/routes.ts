@@ -124,7 +124,7 @@ router.get('/public/*', ({ params, response }) => {
 });
 
 router.get('/', ({ response }) => {
-    response.download(`${env.get("PUBLIC_PATH")}/index.html`);
+    response.download(`${env.get("PUBLIC_PATH")}/index.html`); 
 })
 router.get('/*', ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}`
