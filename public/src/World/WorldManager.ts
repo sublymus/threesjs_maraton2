@@ -13,7 +13,7 @@ export interface AbstractLocalLoader {
     getModel(): Promise<THREE.Object3D>;
     getDependencies(): Dependencies;   
     init(this: AbstractWorld, dependencies: Dependencies['obj']): void
-}
+} 
  
 export interface AbstractWorld {
     localLoader: AbstractLocalLoader;
