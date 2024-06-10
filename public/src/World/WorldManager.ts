@@ -8,7 +8,7 @@ import { Feature } from "../DataBase";
 
 export const WorlGui: any = null//new GUI();
 export interface AbstractLocalLoader {
-    showFeature(uuid: string): void; 
+    showFeature(uuid: string): void;  
     updateFeature(feature: Feature, value: string): void;
     getModel(): Promise<THREE.Object3D>;
     getDependencies(): Dependencies;   
