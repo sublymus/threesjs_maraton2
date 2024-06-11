@@ -15,4 +15,6 @@
 -- delete from  messages;
 
 select * from user_stores;
-select * from users;
+-- select * from users;
+
+ select * from `user_stores` where `email` = 'lil@gmail.com' and `type` = 'COLLABORATOR' limit 1 - no such column: email;

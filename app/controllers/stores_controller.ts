@@ -319,7 +319,7 @@ export default class StoresController {
             if (c_store) return console.log('Collaboratore is always here');
 
         }
-        const us = (await UserStore.query().where('email',email).andWhere('type',USER_TYPE.COLLABORATOR).limit(1))[0];
+        const us = (await UserStore.query().join(User.table,'user_id','users.id').where('email',email).andWhere('user_stores.type',USER_TYPE.COLLABORATOR).limit(1))[0];
         if(us){
             return us;
         }
