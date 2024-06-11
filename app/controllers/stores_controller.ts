@@ -140,6 +140,8 @@ export default class StoresController {
         .select('users.email as owner_email')
         .select('users.created_at as user_created_at')
         .leftJoin('users', 'users.id', 'owner_id');
+        console.log(request.qs());
+        
         if (owner_id) {
             query = query.where('owner_id', owner_id);
         } else {
