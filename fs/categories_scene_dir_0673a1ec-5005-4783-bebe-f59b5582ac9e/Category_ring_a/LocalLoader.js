@@ -80,6 +80,7 @@ export class LocalLoader {
       return this.ring
     }
     this.modelPromise = new Promise((rev) => {
+      console.log();
       new this.dependencies.obj.ADDON.GLTFLoader().load(`${world_config.url}/model.glb`, (gltf) => {
         rev(seTmodel(gltf))
       });

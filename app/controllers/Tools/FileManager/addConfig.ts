@@ -1,5 +1,4 @@
 import fs  from "fs/promises";
-import env from "#start/env"
 export function addWorldConfig(dirPath:string,config:{dirName:string, dirPath:string, dirUrl:string}&Record<string,string|number|boolean>) {
   
   let str = '';
@@ -14,9 +13,9 @@ export function addWorldConfig(dirPath:string,config:{dirName:string, dirPath:st
         `
 import {world_config as config} from '../../../public/world_config.js';
 export const world_config = {
-    url:"${env.get('NODE_ENV')=='development'?'http://':'https://'}" + config.base + "${config.dirUrl}",
+    url:"config.base + "${config.dirUrl}",
 ${str}
 }
-        `
+        ` 
         );
 }

@@ -31,19 +31,20 @@ export async function unZipDir({
   const dirUrl = `${env.get('FILE_STORAGE_URL')}/${dirName}/${file.clientName.replace('.zip','')}`;
   const zip = new AdmZip(file?.tmpPath);
   zip.extractAllTo(dirPath, /** overwrite **/ true);
+  let config: any = {}; 
   if (configure) {
-    const config = configure({
+    config = configure({
       dirName,
       dirPath:dirPathExtrated,
       dirUrl
     });
-    addWorldConfig(dirPathExtrated,{
-      dirName,
-      dirPath:dirPathExtrated,
-      dirUrl,
-      ...config 
-    })
   }
+  addWorldConfig(dirPathExtrated,{
+    dirName,
+    dirPath:dirPathExtrated,
+    dirUrl,
+    ...config 
+  })
   return dirUrl;
 
 }
