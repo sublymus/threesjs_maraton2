@@ -6,16 +6,10 @@ class World {
     localLoader;
 
     dependencies = {
-        path: {
-            THREE: '/three/build/three.module.js',
-            RGBELoader: '/three/examples/jsm/loaders/RGBELoader.js',
-            OrbitControls: '/three/examples/jsm/controls/OrbitControls.js'
-        },
         obj: {
             THREE: null,
             WorldManager: null,
-            RGBELoader: null,
-            OrbitControls: null
+            ADDON: null,
         }
     }
     WorldManager;
@@ -30,10 +24,9 @@ class World {
         return this.dependencies;
     }
     init = (objDependencies, renderer , WorldManager) => {
-        const { THREE,RGBELoader, OrbitControls } = objDependencies;
-        this.dependencies.obj.OrbitControls = OrbitControls;
+        const { THREE,ADDON } = objDependencies;
+        this.dependencies.obj.ADDON = ADDON;
         this.dependencies.obj.THREE = THREE;
-        this.dependencies.obj.RGBELoader = RGBELoader;
         this.WorldManager =WorldManager;
 
         this.scene = new this.dependencies.obj.THREE.Scene();
@@ -50,7 +43,7 @@ class World {
 
         const path = '/src/World/images/royal_esplanade_1k.hdr';
 
-        this.WorldManager.loadCache(new this.dependencies.obj.RGBELoader(), path, setTexture)
+        this.WorldManager.loadCache(new this.dependencies.obj.ADDON.RGBELoader(), path, setTexture)
 
         this.localLoader.init(objDependencies);
 
@@ -63,7 +56,7 @@ class World {
             (this.camera).updateProjectionMatrix();
         })
 
-        this.controls = new this.dependencies.obj.OrbitControls(this.camera, renderer.domElement)
+        this.controls = new this.dependencies.obj.ADDON.OrbitControls(this.camera, this.WorldManager.tactil.getView())
         this.controls.target.z = 0;
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
@@ -85,7 +78,7 @@ class World {
 
     open() {
         if (this.controls) this.controls.enabled = true;
-       console.log('this.dependencies.obj.WorldManager',this.WorldManager);
+    //    console.log('this.dependencies.obj.WorldManager',this.WorldManager);
         this.WorldManager.tactil.visibility(false);
     }
     close() {

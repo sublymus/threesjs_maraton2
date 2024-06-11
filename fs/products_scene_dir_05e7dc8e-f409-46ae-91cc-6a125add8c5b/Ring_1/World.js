@@ -78,7 +78,7 @@ class World {
 
     open() {
         if (this.controls) this.controls.enabled = true;
-       console.log('this.dependencies.obj.WorldManager',this.WorldManager);
+    //    console.log('this.dependencies.obj.WorldManager',this.WorldManager);
         this.WorldManager.tactil.visibility(false);
     }
     close() {

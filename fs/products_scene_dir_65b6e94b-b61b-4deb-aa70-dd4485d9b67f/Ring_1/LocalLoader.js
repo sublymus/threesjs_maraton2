@@ -25,13 +25,10 @@ export class LocalLoader {
   modelPromise
 
   dependencies = {
-    path: {
-      THREE: '/three/build/three.module.js',
-      GLTFLoader: '/three/examples/jsm/loaders/GLTFLoader.js'
-    },
+    
     obj: {
       THREE: null,
-      GLTFLoader: null
+      ADDON: null
     }
   }
   constructor() {
@@ -41,8 +38,8 @@ export class LocalLoader {
   getDependencies(){
     return this.dependencies;
   }
-  init=({THREE,GLTFLoader} )=> {
-    this.dependencies.obj.GLTFLoader = GLTFLoader;
+  init=({THREE,ADDON} )=> {
+    this.dependencies.obj.ADDON = ADDON;
     this.dependencies.obj.THREE = THREE;
     const updateGem = (o, key, value) => {
       let i = 0;
@@ -84,7 +81,7 @@ export class LocalLoader {
       return this.ring
     }
     this.modelPromise = new Promise((rev) => {
-      new this.dependencies.obj.GLTFLoader().load(`${world_config.url}/model.glb`, (gltf) => {
+      new this.dependencies.obj.ADDON.GLTFLoader().load(`${world_config.url}/model.glb`, (gltf) => {
         rev(seTmodel(gltf))
       });
     })

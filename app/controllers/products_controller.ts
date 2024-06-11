@@ -177,8 +177,11 @@ export default class ProductsController {
 
     async get_products({ request, auth }: HttpContext) {                               // price_desc price_asc date_desc date_asc
 
-        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required, all_status, store_id, product_id } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
-
+        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required, all_status, store_id, product_id , by_product_category } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        console.log({
+            all_status, store_id, product_id , by_product_category 
+        });
+        
         let query = db.query().from(Product.table).select('*');
 
         let user: User | undefined;
@@ -189,7 +192,12 @@ export default class ProductsController {
             query = query.where('store_id', store_id);
         }
         if (product_id) {
-            query = query.andWhere('id', product_id);
+            if(by_product_category){
+                const p = await Product.findOrFail(product_id);
+                query = query.andWhere('category_id', p.category_id);
+            }else{
+                query = query.andWhere('id', product_id);
+            }
         }
         if (all_status) {
             !user && (user = await auth.authenticate());
@@ -224,7 +232,7 @@ export default class ProductsController {
             query = query.andWhere((q) => {
                 q.whereBetween('stock', [stock_min || 0, stock_max || Number.MAX_VALUE]);
             });
-        }
+        } 
 
         const p = await limitation(query, page, limit, order_by)
         const products = await p.query;
@@ -269,7 +277,6 @@ export default class ProductsController {
 
     async set_client_visited({ request, auth }: HttpContext) {
         const { product_id } = request.body()
-console.log({product_id});
 
         const user = await auth.authenticate();
         const product = await Product.find(product_id);
