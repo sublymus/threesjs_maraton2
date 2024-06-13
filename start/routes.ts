@@ -131,7 +131,7 @@ router.get('/*', ({ params, response }) => {
     console.log(params['*'][0]);
 
     if (params['*'][0] == 'assets' || params['*'][0] == 'src' || params['*'][0] == 'vite.svg') {
-        response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
+        response.download(`${env.get("PUBLIC_PATH")}/dist${fileName}`);
     } else {
         response.download(`${env.get("PUBLIC_PATH")}/index.html`);
     }

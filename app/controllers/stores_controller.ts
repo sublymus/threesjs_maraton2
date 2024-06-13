@@ -317,7 +317,6 @@ export default class StoresController {
             cid = collaborator.id;
             const c_store = (await db.query().from(UserStore.table).select('*').where('user_id', cid).andWhere('store_id', store_id).andWhere('type', USER_TYPE.COLLABORATOR))[0] as UserStore;
             if (c_store) return console.log('Collaboratore is always here');
-
         }
         const us = (await UserStore.query().join(User.table,'user_id','users.id').where('email',email).andWhere('user_stores.type',USER_TYPE.COLLABORATOR).limit(1))[0];
         if(us){
