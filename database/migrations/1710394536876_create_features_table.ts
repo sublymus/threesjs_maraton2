@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.uuid('id').primary(); 
 
       table.string('collect_type').notNullable();// string , number , date , files , string[], number[], date[]
-      table.string('name').unique().notNullable();
+      table.string('name').notNullable();
       table.boolean('required');
       table.string('placeholder');
       table.string('default_value');// primitve ou FeatureComponent_id
@@ -16,13 +16,13 @@ export default class extends BaseSchema {
       table.boolean('lowercase')
       table.boolean('uppercase');
       table.boolean('capitalize');
-      table.string('trim');
+      table.boolean('trim');
       table.string('match');//tableau json [string  , string]
-      table.string('min_length');// array length
-      table.string('max_length');
-      table.string('min');// interval of number, date, string.length,
-      table.string('max');
-      table.string('max_size');// file size
+      table.integer('min_length');// array length
+      table.integer('max_length');
+      table.integer('min');// interval of number, date, integer.length,
+      table.integer('max');
+      table.integer('max_size');// file size
       table.string('mime_type');//file mime
       table.string('ext'); // //tableau json string[]
       table.string('enum'); // JSON of array of primitve or FeatureComponent_id /// if enum avalaible ==> show list else input

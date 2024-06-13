@@ -41,10 +41,10 @@ export default class Feature extends BaseModel {
   declare match: string
 
   @column()
-  declare min_length: string
+  declare min_length: number
 
   @column()
-  declare max_length: string
+  declare max_length: number
 
   @column()
   declare min: string
