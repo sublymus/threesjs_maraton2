@@ -6,7 +6,6 @@ tmp
 
 # Dependencies and AdonisJS build
 node_modules
-sublymus_client
 
 # Secrets
 .env
