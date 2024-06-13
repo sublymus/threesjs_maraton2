@@ -20,13 +20,16 @@ import UserStore from '#models/user_store';
 router.get('/google_connexion', [AuthController, 'google_connexion']);
 router.get('/gl_push_info', [AuthController, 'google_push_info']);
 router.get('me', [AuthController, 'me']);
-router.get('/can_manage_sublymus', [AuthController, 'can_manage_sublymus'])
-router.get('get_users/', [AuthController, 'get_users']);
-router.get('get_moderators/', [AuthController, 'get_moderators']);
-router.post('/add_moderator', [AuthController, 'add_moderator'])
 router.put('edit_me/', [AuthController, 'edit_me']);
 router.get('/disconnection', [AuthController, 'disconnection']);
 router.get('/global_disconnection', [AuthController, 'global_disconnection']);
+//Admin
+router.get('get_users/', [AuthController, 'get_users']);
+router.post('/add_moderator', [AuthController, 'add_moderator'])
+router.get('get_moderators/', [AuthController, 'get_moderators']);
+router.get('/can_manage_sublymus', [AuthController, 'can_manage_sublymus'])
+router.delete('/remove_moderator', [AuthController, 'remove_moderator'])
+
 //Product
 router.post('/create_product', [ProductsController, 'create_product']);
 router.get('/get_products', [ProductsController, 'get_products']);
@@ -81,6 +84,7 @@ router.get('/can_use_store/:att', [StoresController, 'can_use_store'])
 router.put('/update_store', [StoresController, 'update_store'])
 router.delete('/delete_store/:id', [StoresController, 'delete_store'])
 router.delete('/remove_collaborator', [StoresController, 'remove_collaborator'])
+router.get('/check_store', [StoresController, 'check_store'])
 //Role
 router.post('/create_collaborator_role', [RolesController, 'create_collaborator_role']);
 router.put('/change_collaborator_role', [RolesController, 'change_collaborator_role']);

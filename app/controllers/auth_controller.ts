@@ -287,19 +287,14 @@ async get_moderators({ request /*, auth*/ }: HttpContext) {
         }
     }
     async remove_moderator({ request, auth }: HttpContext) {
-        const { store_id, moderator_id } = request.body();
+        const { moderator_id } = request.body();
         const user = await auth.authenticate();
-        if(!await UserStore.isStoreManagerOrMore(user.id, store_id)) return  'Permission Required';
+        if(!await UserStore.isSublymusManager(user.id)) return  'Permission Required';
         
 
-        const moderator_store = (await db.query().from(UserStore.table).select('*').where('user_id', moderator_id).andWhere('store_id', store_id).andWhere('type', USER_TYPE.COLLABORATOR))[0];
-        if (!moderator_store) return console.log('moderator_store');
-        if (moderator_store.type == USER_TYPE.OWNER) return console.log('Owner connot be removed');
-
-        const clst = await UserStore.find(moderator_store.id);
-        await clst?.delete();
-        console.log('delete');
-
+        const moderator_store = (await UserStore.query().where('user_id', moderator_id).andWhereNull('store_id').andWhere('type', USER_TYPE.MODERATOR))[0];
+        if (!moderator_store) throw new Error('moderator_store');
+        await moderator_store.delete();
         return {
             deleted: true
         }

@@ -60,12 +60,12 @@ export default class StoresController {
             const store = await Store.create({
                 description,
                 id,
-                name,
+                name: name.trim().toLocaleLowerCase(),
                 owner_id: user.id,
                 banners: JSON.stringify(imagesUrl),
                 phone,
                 website,
-                logo:JSON.stringify(logo),
+                logo: JSON.stringify(logo),
                 store_email
                 // address_id
                 // interface_id
@@ -100,7 +100,7 @@ export default class StoresController {
 
         ['name', 'description', 'phone', 'website', 'store_email'].forEach((a => (store as any)[a] = body[a]));
         let urls: any = []
-        for (const f of ['banners','logo'] as const) {
+        for (const f of ['banners', 'logo'] as const) {
             if (!body[f]) continue;
 
             urls = await updateFiles({
@@ -127,26 +127,30 @@ export default class StoresController {
     }
 
     async get_stores({ request, auth }: HttpContext) {
-        let { page, limit,text, name, email, description, owner_id, phone, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+        let { page, limit, text, name, email, description, owner_id, phone, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         const user = await auth.authenticate();
-        
+
         let query = db.query()
-        .from(Store.table)
-        .select('*')
-        .select('stores.id as id')
-        .select('stores.name as name')
-        .select('users.name as owner_name')
-        .select('users.id as owner_id')
-        .select('users.email as owner_email')
-        .select('users.created_at as user_created_at')
-        .leftJoin('users', 'users.id', 'owner_id');
+            .from(Store.table)
+            .select('*')
+            .select('stores.id as id')
+            .select('stores.name as name')
+            .select('users.name as owner_name')
+            .select('users.id as owner_id')
+            .select('users.email as owner_email')
+            .select('users.created_at as user_created_at')
+            .leftJoin('users', 'users.id', 'owner_id');
         console.log(request.qs());
-        
+
         if (owner_id) {
+            console.log({
+                owner_id
+            });
+
             query = query.where('owner_id', owner_id);
         } else {
             const p = await UserStore.isSublymusManager(user.id)
-            if(!p) throw new Error('Permission Required');
+            if (!p) throw new Error('Permission Required');
             ;
         }
         if (text) {
@@ -156,9 +160,9 @@ export default class StoresController {
             } else {
                 query = query.andWhere((q) => {
                     q.whereLike('stores.name', like)
-                    .orWhereLike('users.name', like)
-                    .orWhereLike('users.email', like)
-                    .orWhereLike('store_email', like);
+                        .orWhereLike('users.name', like)
+                        .orWhereLike('users.email', like)
+                        .orWhereLike('stores.store_email', like);
                 });
             }
         }
@@ -180,7 +184,7 @@ export default class StoresController {
         }
         const stores = await limitation(query, page, limit, order_by)
         const l = ((await stores.query).map(s => Store.ParseStore(s)));
-        
+
         return {
             list: l,
             ...stores.paging
@@ -193,10 +197,10 @@ export default class StoresController {
         return stores.map(s => Store.ParseStore(s))
     }
 
-    async get_store_collaborators({ request , auth }: HttpContext) {
+    async get_store_collaborators({ request, auth }: HttpContext) {
         let { page, limit, name, email, user_id, phone, order_by, store_id, text, } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         const user = await auth.authenticate();
-       if(!await UserStore.isStoreManagerOrMore(user.id ,store_id)) throw new Error('Permission Required');
+        if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) throw new Error('Permission Required');
         let query = db.query()
             .from(UserStore.table)
             .select('*')
@@ -251,7 +255,7 @@ export default class StoresController {
     async get_store_clients({ request, auth }: HttpContext) {
         let { page, limit, name, email, user_id, phone, order_by, store_id, text, } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         const user = await auth.authenticate();
-        if(!await UserStore.isStoreManagerOrMore(user.id, store_id)) return  'Permission Required';
+        if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) return 'Permission Required';
         let query = db.query()
             .from(UserStore.table)
             .select('*')
@@ -269,7 +273,7 @@ export default class StoresController {
             if (text) {
                 const v = `%${text.split('').join('%')}%`
                 query = query.andWhere((q) => {
-                    q.whereLike('phone', v).orWhereLike('phone', v).orWhereLike('name', v)
+                    q.whereLike('email', v).orWhereLike('phone', v).orWhereLike('name', v)
                 });
             } else {
                 if (email) {
@@ -297,8 +301,8 @@ export default class StoresController {
         const { email, role_id, store_id } = request.body();
 
         const user = await auth.authenticate();
-        if(!await UserStore.isStoreManagerOrMore(user.id, store_id)) return  'Permission Required';
-        
+        if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) return 'Permission Required';
+
         let collaborator = await User.findBy('email', email);
 
         let cid = '';
@@ -318,8 +322,8 @@ export default class StoresController {
             const c_store = (await db.query().from(UserStore.table).select('*').where('user_id', cid).andWhere('store_id', store_id).andWhere('type', USER_TYPE.COLLABORATOR))[0] as UserStore;
             if (c_store) return console.log('Collaboratore is always here');
         }
-        const us = (await UserStore.query().join(User.table,'user_id','users.id').where('email',email).andWhere('user_stores.type',USER_TYPE.COLLABORATOR).limit(1))[0];
-        if(us){
+        const us = (await UserStore.query().join(User.table, 'user_id', 'users.id').where('email', email).andWhere('user_stores.type', USER_TYPE.COLLABORATOR).limit(1))[0];
+        if (us) {
             return us;
         }
         const id = v4()
@@ -339,8 +343,8 @@ export default class StoresController {
     async remove_collaborator({ request, auth }: HttpContext) {
         const { store_id, collaborator_id } = request.body();
         const user = await auth.authenticate();
-        if(!await UserStore.isStoreManagerOrMore(user.id, store_id)) return  'Permission Required';
-        
+        if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) return 'Permission Required';
+
 
         const collaborator_store = (await db.query().from(UserStore.table).select('*').where('user_id', collaborator_id).andWhere('store_id', store_id).andWhere('type', USER_TYPE.COLLABORATOR))[0];
         if (!collaborator_store) return console.log('collaborator_store');
@@ -359,11 +363,11 @@ export default class StoresController {
         const user = await auth.authenticate()
         const store = (await db.query().from(Store.table).select('*').where('id', att).orWhere('name', att).limit(1))[0] as Store | undefined;
         if (!store) throw new Error('Store not found');
-        
+
         const userStore = await UserStore.isStoreManagerOrMore(user.id, store.id)
         // user
         return userStore && {
-            userStore:UserStore.parseUserStore(userStore),
+            userStore: UserStore.parseUserStore(userStore),
             user: {
                 ...User.ParseUser(user),
                 token: user.currentAccessToken.value,
@@ -388,7 +392,7 @@ export default class StoresController {
         }
 
         return userStore && {
-            userStoree:UserStore.parseUserStore(userStore),
+            userStoree: UserStore.parseUserStore(userStore),
             user: {
                 ...User.ParseUser(user),
                 token: user.currentAccessToken.value,
@@ -433,13 +437,13 @@ export default class StoresController {
         }
     }
 
-    async get_store_var({ request , auth}: HttpContext) {
-        
+    async get_store_var({ request, auth }: HttpContext) {
+
         const { store_id } = request.qs();
         if (!store_id) return 'store_id is required';
-        
+
         const user = await auth.authenticate();
-        if(!await UserStore.isStoreManagerOrMore(user.id, store_id)) return  'Permission Required';
+        if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) return 'Permission Required';
 
         const products = (await db.from(Product.table).where('store_id', store_id).count('id as count'))[0]?.count;
         const catalogs = (await db.from(Catalog.table).where('store_id', store_id).count('id as count'))[0]?.count;
@@ -452,15 +456,27 @@ export default class StoresController {
             features
         }
     }
+    async check_store({ request }: HttpContext) {
+
+        const { store_name } = request.qs();
+        const s = store_name.trim().toLocaleLowerCase();
+        if (!s) return;
+        if(s.length < 3) return;
+        const deja_pris = !!(await db.query().from(Store.table).select('id').where('name', s).limit(1))[0]
+        console.log({s, deja_pris});
+        return {
+            exist: deja_pris
+        }
+    }
 
     async get_users_var({ request, auth }: HttpContext) {
-        
+
         const { store_id } = request.qs();
         if (!store_id) return 'store_id is required';
 
         const user = await auth.authenticate();
-        if(!await UserStore.isStoreManagerOrMore(user.id, store_id)) return  'Permission Required';
-        
+        if (!await UserStore.isStoreManagerOrMore(user.id, store_id)) return 'Permission Required';
+
         const roles = (await db.from(Role.table).where('store_id', store_id).count('id as count'))[0]?.count;
         const collaborators = (await db.from(UserStore.table).where('store_id', store_id).andWhere((qr) => {
             qr.where('type', USER_TYPE.OWNER).orWhere('type', USER_TYPE.COLLABORATOR)
