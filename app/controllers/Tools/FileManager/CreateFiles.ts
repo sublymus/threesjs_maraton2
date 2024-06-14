@@ -105,7 +105,7 @@ export function moveFile({
     try {
       let fileName = ''
       let ext = file.clientName
-      ext = ext.lastIndexOf('.') + 1 < ext.length ? ext.substring(ext.lastIndexOf('.') + 1, ext?.length) : 'zip'
+      ext =compress && compress == 'img'?'wbep': ext.lastIndexOf('.') + 1 < ext.length ? ext.substring(ext.lastIndexOf('.') + 1, ext?.length) : 'zip'
       fileName = `${Date.now().toString(32)}_${Math.round(
         Math.random() * 10e6
       ).toString(36)}${count}_${table_name}_${column_name}_${table_id}.${ext}`;
