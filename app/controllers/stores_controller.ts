@@ -140,13 +140,9 @@ export default class StoresController {
             .select('users.email as owner_email')
             .select('users.created_at as user_created_at')
             .leftJoin('users', 'users.id', 'owner_id');
-        console.log(request.qs());
-
+       console.log('gets_Stores',{text, owner_id});
+       
         if (owner_id) {
-            console.log({
-                owner_id
-            });
-
             query = query.where('owner_id', owner_id);
         } else {
             const p = await UserStore.isSublymusManager(user.id)
