@@ -13,6 +13,9 @@ import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
 import UserStore from '#models/user_store';
 import User, { USER_STATUS, USER_TYPE } from '#models/user';
 import Role from '#models/role';
+import Discussion from '#models/discussion';
+import { DateTime } from 'luxon';
+import Message from '#models/message';
 
 export default class StoresController {
     async create_store({ request, auth }: HttpContext) {
@@ -26,7 +29,7 @@ export default class StoresController {
         const id = v4()
 
         const user = await auth.authenticate();
-
+        let store: Store | null = null;
         try {
 
             const imagesUrl = await createFiles({
@@ -57,7 +60,7 @@ export default class StoresController {
                     maxSize: 12 * 1024 * 1024,
                 },
             });
-            const store = await Store.create({
+            store = await Store.create({
                 description,
                 id,
                 name: name.trim().toLocaleLowerCase(),
@@ -77,7 +80,7 @@ export default class StoresController {
                 store_id: id,
                 type: USER_TYPE.OWNER
             })
-
+            await populateStore({...store.$attributes, id} as Store, user);
             return {
                 ...Store.ParseStore(store),
                 user_store,
@@ -86,10 +89,11 @@ export default class StoresController {
         } catch (error) {
             deleteFiles(id);
             console.log(error);
-
-            return error.message
+            await store?.delete();
+            return error.message;
         }
     }
+
     async update_store({ request, auth }: HttpContext) {
         const body = request.body();
 
@@ -140,8 +144,8 @@ export default class StoresController {
             .select('users.email as owner_email')
             .select('users.created_at as user_created_at')
             .leftJoin('users', 'users.id', 'owner_id');
-       console.log('gets_Stores',{text, owner_id});
-       
+        console.log('gets_Stores', { text, owner_id });
+
         if (owner_id) {
             query = query.where('owner_id', owner_id);
         } else {
@@ -269,14 +273,14 @@ export default class StoresController {
             if (text) {
                 const v = `%${text.split('').join('%')}%`
                 query = query.andWhere((q) => {
-                    q.whereLike('email', v).orWhereLike('phone', v).orWhereLike('name', v)
+                    q.whereLike('email', v).orWhereLike('name', v)
                 });
             } else {
                 if (email) {
                     query = query.andWhereLike('email', `%${email.split('').join('%')}%`);
                 }
                 if (phone) {
-                    query = query.andWhereLike('phone', `%${phone.split('').join('%')}%`);
+                    // query = query.andWhereLike('phone', `%${phone.split('').join('%')}%`);
                 }
                 if (name) {
                     query = query.andWhereLike('name', `%${name.split('').join('%')}%`);
@@ -457,9 +461,9 @@ export default class StoresController {
         const { store_name } = request.qs();
         const s = store_name.trim().toLocaleLowerCase();
         if (!s) return;
-        if(s.length < 3) return;
+        if (s.length < 3) return;
         const deja_pris = !!(await db.query().from(Store.table).select('id').where('name', s).limit(1))[0]
-        console.log({s, deja_pris});
+        console.log({ s, deja_pris });
         return {
             exist: deja_pris
         }
@@ -489,4 +493,146 @@ export default class StoresController {
             clients
         }
     }
+}
+
+
+async function populateStore(store: Store, user:User) {
+    /** ROLE */
+    await Role.create({
+        chat_client: true,
+        filter_client: true,
+        filter_collaborator: true,
+        filter_command: true,
+        filter_product: true,
+        manage_command: true,
+        name: 'Customer service',
+        store_id: store.id,
+    })
+    await Role.create({
+        edit_product: true,
+        filter_collaborator: true,
+        filter_product: true,
+        manage_scene_product: true,
+        name: '3D Engineer',
+        store_id: store.id,
+    })
+    await Role.create({
+        ban_client: true,
+        chat_client: true,
+        filter_client: true,
+        ban_collaborator: true,
+        create_delete_collaborator: true,
+        create_delete_product: true,
+        edit_product: true,
+        filter_collaborator: true,
+        filter_command: true,
+        filter_product: true,
+        manage_command: true,
+        manage_interface: true,
+        manage_scene_product: true,
+        name: 'Collaborator',
+        store_id: store.id,
+
+    })
+    /** CATALOG */
+    const catalog_id = v4();
+    await Catalog.create({
+        id: catalog_id,
+        label: 'My First Catalog',
+        description: 'My First Catalog Description',
+        status: Product.STATUS.VISIBLE,
+        store_id: store.id,
+        index: 1,
+    })
+    /** Category */
+    const category_id = v4();
+    await Category.create({
+        id: category_id,
+        catalog_id,
+        label: 'My First Category',
+        description: 'My First Category Description',
+        status: Product.STATUS.VISIBLE,
+        store_id: store.id,
+        scene_dir: '/fs/categories_scene_dir_0673a1ec-5005-4783-bebe-f59b5582ac9e/Category_ring_a',
+        index: 1
+    })
+    await Product.create({
+        title: "Ring 82",
+        description: "The 1982 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id,
+        price: 1243,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 83",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+
+    const admin = (await db.from(UserStore.table).join('users','user_id','users.id').whereNull('store_id').limit(1))[0]
+    const discussion_id = v4();
+    console.log({store});
+    
+    await Discussion.create({
+        creator_id: admin.user_id,
+        receiver_id:store.owner_id,
+        creator_opened_at: DateTime.now(),
+        to_id:store.id,
+        id:discussion_id
+    })
+
+    await Message.create({
+        table_id:discussion_id,
+        table_name:Discussion.table,
+        text:
+`
+Bonjour ${user.name},
+
+Je me permets de vous contacter suite à votre inscription à la démo de notre plateforme. Je suis [Votre nom], membre de l'équipe de [Nom de votre plateforme], et je tiens à vous souhaiter la bienvenue !
+
+Nous avons développé cette plateforme en ligne avec pour objectif de vous offrir des outils performants pour gérer efficacement vos produits, interagir avec votre clientèle et booster vos ventes en ligne. Nous sommes ravis que vous ayez rejoint notre démo et nous espérons que vous apprécierez l'expérience que nous vous proposons.
+
+Nous vous encourageons vivement à explorer toutes les fonctionnalités de notre plateforme et à nous remonter vos retours et suggestions. Votre avis est essentiel pour nous permettre d'améliorer constamment notre projet et répondre au mieux à vos besoins en tant que propriétaire de magasin ou boutique.
+
+N'hésitez pas à nous faire part de vos impressions, des points positifs que vous avez identifiés et des axes d'amélioration que vous envisagez. Vos commentaires seront précieux pour nous aider à façonner une plateforme qui réponde parfaitement à vos attentes.
+
+Si vous avez des questions ou besoin d'assistance pour explorer notre démo, n'hésitez pas à me contacter directement. Je me ferai un plaisir de vous guider et de vous accompagner dans la découverte de notre solution.
+
+Votre retour est essentiel pour nous, et nous vous remercions par avance pour votre implication et votre contribution à l'amélioration de notre projet.
+
+Bien cordialement,
+
+${admin.name} de L'équipe Sublymus \(^_^)/
+`,
+user_id:admin.user_id,
+    });
+
 }

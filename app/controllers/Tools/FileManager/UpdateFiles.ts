@@ -91,8 +91,6 @@ export async function updateFiles({
   });
 
   let newUrls: string[] = [];
-  console.log({ fileLength, lastUrls, newPseudoUrls });
-
   if (min && fileLength < min) {
     if (throwError) throw new Error("number of Files must be >= " + min);
     else return [];
@@ -108,6 +106,7 @@ export async function updateFiles({
 
   _lastUrls.forEach((lastUrl) => {
     if (!newUrls.includes(lastUrl)) {
+      if(!lastUrl.includes(table_id)) return
       const filePath = `.${lastUrl}`;
       console.log({filePath});
       
@@ -117,7 +116,6 @@ export async function updateFiles({
         });
       }else{
         console.log('ERROR file don\'t exist');
-        
       }
     }
   });

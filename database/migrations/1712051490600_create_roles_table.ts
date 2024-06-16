@@ -7,7 +7,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').primary();
       table.string('name').notNullable()
-      table.uuid('store_id').references('id').inTable('stores');
+      table.uuid('store_id').references('id').inTable('stores').onDelete('CASCADE');;
       
       table.boolean('filter_client')
       table.boolean('ban_client')
