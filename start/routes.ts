@@ -134,7 +134,13 @@ router.get('/*', ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}`
     console.log(params['*'][0]);
 
-    if (params['*'][0] == 'assets' || params['*'][0] == 'src' || params['*'][0] == 'vite.svg') {
+    if (
+        params['*'][0] == 'assets' ||
+        params['*'][0] == 'src' || 
+        params['*'][0] == 'vite.svg'|| 
+        params['*'][0] == 'vite.svg'||
+        params['*'][0] == 'worker.js'
+        ) {
         response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
     } else {
         response.download(`${env.get("PUBLIC_PATH")}/index.html`);
@@ -173,3 +179,26 @@ setTimeout(async () => {
         }
     }
 }, 5000);
+
+import webpush from "web-push";
+
+const publicVapidKey = 'BDwYyNLBYIyNOBFX3M27uTAUXLrUxgHVyBJPjxJj3aQR7ghxC_MetHpzgTspdk4e4Iq9E0LCzeAtbCPOcdclxCk';
+const privateVapidKey = 'rOHBJ0AGjSf37QW-mPRScGNr_0Bqn6Ouk-1nQPUUPpI';
+
+webpush.setVapidDetails('mailto:sublymus@gmail.com', publicVapidKey, privateVapidKey);
+
+router.post('/subscribe', ({request, response}) => {
+    // Get pushSubscription object
+    const subscription = request.body();
+    console.log(subscription);
+    
+    // Send 201 - resource created
+    response.status(201).json({});
+    // Create payload
+    const payload = JSON.stringify({title: "Push Test", content: "Push Content"});
+    webpush.sendNotification(subscription as any, payload).catch(err => console.error(err));
+    // Pass object into sendNotification
+    setTimeout(()=>{
+        webpush.sendNotification(subscription as any, payload).catch(err => console.error(err));
+    }, 5000)
+}); 
