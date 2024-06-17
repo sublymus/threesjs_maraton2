@@ -137,8 +137,8 @@ router.get('/*', ({ params, response }) => {
     if (
         params['*'][0] == 'assets' ||
         params['*'][0] == 'src' || 
-        params['*'][0] == 'vite.svg'|| 
-        params['*'][0] == 'vite.svg'||
+        params['*'][0] == 'world_config.js'|| 
+        params['*'][0] == 'logo.png'||
         params['*'][0] == 'worker.js'
         ) {
         response.download(`${env.get("PUBLIC_PATH")}${fileName}`);
