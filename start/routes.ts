@@ -173,7 +173,7 @@ setTimeout(async () => {
                 user_id: admin.id,
                 type: USER_TYPE.ADMIN,
             });
-            console.log('*********** NEW ADMIN ', admin.email);
+            console.log('*********** NEW ADMIN ', admin.email,  await User.findBy('email',email));
         }else{
             console.log(us.$attributes); 
         }
