@@ -18,7 +18,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   HOST: Env.schema.string({ format: 'host' }),
   LOG_LEVEL: Env.schema.string(),
   CALL_BACK_URL:Env.schema.string(),
-  DIR_NAME : Env.schema.string(),
+  // DIR_NAME : Env.schema.string(),
   //////////////////  My ENV
   FRONT_ORIGINE: Env.schema.string(),
   FRONT_END_AUTH: Env.schema.string(),
