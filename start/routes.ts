@@ -195,10 +195,10 @@ router.post('/subscribe', ({request, response}) => {
     // Send 201 - resource created
     response.status(201).json({});
     // Create payload
-    const payload = JSON.stringify({title: "Push Test", content: "Push Content"});
-    webpush.sendNotification(subscription as any, payload).catch(err => console.error(err));
+    // const payload = JSON.stringify({title: "Push Test", content: "Push Content"});
+    // webpush.sendNotification(subscription as any, payload).catch(err => console.error(err));
     // Pass object into sendNotification
     setTimeout(()=>{
-        webpush.sendNotification(subscription as any, payload).catch(err => console.error(err));
+        // webpush.sendNotification(subscription as any, payload).catch(err => console.error(err));
     }, 5000)
 }); 

@@ -63,6 +63,7 @@ class World {
         this.controls.enabled = true;
         this.controls.maxDistance = 20;
         this.controls.minDistance = 7;
+        this.controls.enablePan = false
     }
 
     getScene() {

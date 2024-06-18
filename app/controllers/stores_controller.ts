@@ -63,7 +63,7 @@ export default class StoresController {
             store = await Store.create({
                 description,
                 id,
-                name: name.trim().toLocaleLowerCase(),
+                name: name.trim().toLocaleLowerCase().replaceAll(' ', '_'),
                 owner_id: user.id,
                 banners: JSON.stringify(imagesUrl),
                 phone,
@@ -80,7 +80,7 @@ export default class StoresController {
                 store_id: id,
                 type: USER_TYPE.OWNER
             })
-            await populateStore({...store.$attributes, id} as Store, user);
+            await populateStore({ ...store.$attributes, id } as Store, user);
             return {
                 ...Store.ParseStore(store),
                 user_store,
@@ -101,7 +101,7 @@ export default class StoresController {
         const store = await Store.find(body.store_id);
 
         if (store?.owner_id != user.id) return 'Permission deined';
-
+        if (body.name) body.name = body.name.trim().toLocaleLowerCase().replaceAll(' ', '_');
         ['name', 'description', 'phone', 'website', 'store_email'].forEach((a => (store as any)[a] = body[a]));
         let urls: any = []
         for (const f of ['banners', 'logo'] as const) {
@@ -144,7 +144,6 @@ export default class StoresController {
             .select('users.email as owner_email')
             .select('users.created_at as user_created_at')
             .leftJoin('users', 'users.id', 'owner_id');
-        console.log('gets_Stores', { text, owner_id });
 
         if (owner_id) {
             query = query.where('owner_id', owner_id);
@@ -154,12 +153,12 @@ export default class StoresController {
             ;
         }
         if (text) {
-            const like = `%${(text as string)}%`;
-            if ((text as string).startsWith('#')) {
+            const like = `%${(text as string).trim()}%`;
+            if ((text as string).trim().startsWith('#')) {
                 query = query.andWhereLike('stores.id', like.replaceAll('#', ''));
             } else {
                 query = query.andWhere((q) => {
-                    q.whereLike('stores.name', like)
+                    q.whereLike('stores.name', like.toLocaleLowerCase().replaceAll(' ', '_'))
                         .orWhereLike('users.name', like)
                         .orWhereLike('users.email', like)
                         .orWhereLike('stores.store_email', like);
@@ -167,19 +166,19 @@ export default class StoresController {
             }
         }
         if (phone) {
-            const like = `%${(phone as string).split('').join('%')}%`;
+            const like = `%${(phone as string).trim().split('').join('%')}%`;
             query = query.andWhereLike('stores.phone', like);
         }
         if (name) {
-            const like = `%${(name as string).split('').join('%')}%`;
-            query = query.andWhereLike('stores.name', like);
+            const like = `%${(name as string).trim().split('').join('%')}%`;
+            query = query.andWhereLike('stores.name', like.toLocaleLowerCase().replaceAll(' ', '_'));
         }
         if (email) {
-            const like = `%${(email as string).split('').join('%')}%`;
+            const like = `%${(email as string).trim().split('').join('%')}%`;
             query = query.andWhereLike('users.email', like);
         }
         if (description) {
-            const like = `%${(description as string).split('').join('%')}%`;
+            const like = `%${(description as string).trim().split('').join('%')}%`;
             query = query.andWhereLike('stores.description', like);
         }
         const stores = await limitation(query, page, limit, order_by)
@@ -219,7 +218,7 @@ export default class StoresController {
         } else {
             if (text) {
                 const t = text as string
-                const v = `%${t.split('').join('%')}%`;
+                const v = `%${t.trim().split('').join('%')}%`;
                 if ((t).startsWith('#')) {
                     query = query.whereLike('users.id', `%${t.replaceAll('#', '')}%`);
                 } else {
@@ -229,13 +228,13 @@ export default class StoresController {
                 }
             } else {
                 if (email) {
-                    query = query.andWhereLike('email', `%${email.split('').join('%')}%`);
+                    query = query.andWhereLike('email', `%${email.trim().split('').join('%')}%`);
                 }
                 if (phone) {
-                    query = query.andWhereLike('phone', `%${phone.split('').join('%')}%`);
+                    query = query.andWhereLike('phone', `%${phone.trim().split('').join('%')}%`);
                 }
                 if (name) {
-                    query = query.andWhereLike('name', `%${name.split('').join('%')}%`);
+                    query = query.andWhereLike('name', `%${name.trim().split('').join('%')}%`);
                 }
             }
 
@@ -249,7 +248,9 @@ export default class StoresController {
     }
 
     async get_store_by_name({ request }: HttpContext) {
-        return await Store.findBy('name', request.param('name'))
+        const s = await Store.findBy('name', request.param('name'));
+        if(!s) return null
+        return Store.ParseStore(s)
     }
 
     async get_store_clients({ request, auth }: HttpContext) {
@@ -496,7 +497,7 @@ export default class StoresController {
 }
 
 
-async function populateStore(store: Store, user:User) {
+async function populateStore(store: Store, user: User) {
     /** ROLE */
     await Role.create({
         chat_client: true,
@@ -535,20 +536,29 @@ async function populateStore(store: Store, user:User) {
 
     })
     /** CATALOG */
-    const catalog_id = v4();
+    const catalog1_id = v4();
     await Catalog.create({
-        id: catalog_id,
+        id: catalog1_id,
         label: 'My First Catalog',
         description: 'My First Catalog Description',
         status: Product.STATUS.VISIBLE,
         store_id: store.id,
         index: 1,
     })
+    const catalog2_id = v4();
+    await Catalog.create({
+        id: catalog2_id,
+        label: 'My Second Catalog',
+        description: 'My Second Catalog Description',
+        status: Product.STATUS.VISIBLE,
+        store_id: store.id,
+        index: 1,
+    })
     /** Category */
-    const category_id = v4();
+    const category1_1_id = v4();
     await Category.create({
-        id: category_id,
-        catalog_id,
+        id: category1_1_id,
+        catalog_id: catalog1_id,
         label: 'My First Category',
         description: 'My First Category Description',
         status: Product.STATUS.VISIBLE,
@@ -556,8 +566,65 @@ async function populateStore(store: Store, user:User) {
         scene_dir: '/fs/categories_scene_dir_0673a1ec-5005-4783-bebe-f59b5582ac9e/Category_ring_a',
         index: 1
     })
+    const category2_1_id = v4();
+    await Category.create({
+        id: category2_1_id,
+        catalog_id: catalog1_id,
+        label: 'My First Category',
+        description: 'My First Category Description',
+        status: Product.STATUS.VISIBLE,
+        store_id: store.id,
+        scene_dir: '/fs/categories_scene_dir_0673a1ec-5005-4783-bebe-f59b5582ac9e/Category_ring_a',
+        index: 1
+    })
+    const category3_1_id = v4();
+    await Category.create({
+        id: category3_1_id,
+        catalog_id: catalog1_id,
+        label: 'My First Category',
+        description: 'My First Category Description',
+        status: Product.STATUS.VISIBLE,
+        store_id: store.id,
+        scene_dir: '/fs/categories_scene_dir_0673a1ec-5005-4783-bebe-f59b5582ac9e/Category_ring_a',
+        index: 1
+    })
+
+    const category1_2_id = v4();
+    await Category.create({
+        id: category1_2_id,
+        catalog_id: catalog2_id,
+        label: 'My First Category',
+        description: 'My First Category Description',
+        status: Product.STATUS.VISIBLE,
+        store_id: store.id,
+        scene_dir: '/fs/categories_scene_dir_0673a1ec-5005-4783-bebe-f59b5582ac9e/Category_ring_a',
+        index: 1
+    })
+    const category2_2_id = v4();
+    await Category.create({
+        id: category2_2_id,
+        catalog_id: catalog2_id,
+        label: 'My First Category',
+        description: 'My First Category Description',
+        status: Product.STATUS.VISIBLE,
+        store_id: store.id,
+        scene_dir: '/fs/categories_scene_dir_0673a1ec-5005-4783-bebe-f59b5582ac9e/Category_ring_a',
+        index: 1
+    })
+    const category3_2_id = v4();
+    await Category.create({
+        id: category3_2_id,
+        catalog_id: catalog2_id,
+        label: 'My First Category',
+        description: 'My First Category Description',
+        status: Product.STATUS.VISIBLE,
+        store_id: store.id,
+        scene_dir: '/fs/categories_scene_dir_0673a1ec-5005-4783-bebe-f59b5582ac9e/Category_ring_a',
+        index: 1
+    })
+    /* Products  */
     await Product.create({
-        title: "Ring 82",
+        title: "Ring 111",
         description: "The 1982 pepal ring by Jack Alderman",
         images: JSON.stringify([
             "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
@@ -570,14 +637,14 @@ async function populateStore(store: Store, user:User) {
         status: "VISIBLE",
         stock: 34,
         keywords: "noga",
-        category_id,
+        category_id: category1_1_id,
         price: 1243,
         is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
     await Product.create({
-        title: "Ring 83",
+        title: "Ring 211",
         description: "The 1983 pepal ring by Jack Alderman",
         images: JSON.stringify([
             "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
@@ -590,30 +657,354 @@ async function populateStore(store: Store, user:User) {
         status: "VISIBLE",
         stock: 34,
         keywords: "noga",
-        category_id,
+        category_id: category1_1_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 311",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category1_1_id,
         price: 356,
         is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
 
-    const admin = (await db.from(UserStore.table).join('users','user_id','users.id').whereNull('store_id').limit(1))[0]
+    await Product.create({
+        title: "Ring 121",
+        description: "The 1982 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category2_1_id,
+        price: 1243,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 221",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category2_1_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 321",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category2_1_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+
+    await Product.create({
+        title: "Ring 131",
+        description: "The 1982 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category3_1_id,
+        price: 1243,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 231",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category3_1_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 331",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category3_1_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    //
+    await Product.create({
+        title: "Ring 112",
+        description: "The 1982 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category1_2_id,
+        price: 1243,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 212",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category1_2_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 312",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category1_2_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+
+    await Product.create({
+        title: "Ring 122",
+        description: "The 1982 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category2_2_id,
+        price: 1243,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 222",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category2_2_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 322",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category2_2_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+
+    await Product.create({
+        title: "Ring 132",
+        description: "The 1982 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category3_2_id,
+        price: 1243,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 232",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category3_2_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    await Product.create({
+        title: "Ring 332",
+        description: "The 1983 pepal ring by Jack Alderman",
+        images: JSON.stringify([
+            "/fs/1hv1mieub_19ahe0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg",
+            "/fs/1hvrng7iv_29tvf0_products_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        model_images: JSON.stringify([
+            "/fs/1i0b788bk_47rim0_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.wbep",
+            "/fs/1hv1lpqtk_27y870_products_model_images_05e7dc8e-f409-46ae-91cc-6a125add8c5b.jpg"
+        ]),
+        status: "VISIBLE",
+        stock: 34,
+        keywords: "noga",
+        category_id: category3_2_id,
+        price: 356,
+        is_dynamic_price: 0,
+        store_id: store.id,
+        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+    })
+    const admin = (await db.from(UserStore.table).join('users', 'user_id', 'users.id').whereNull('store_id').limit(1))[0]
     const discussion_id = v4();
-    console.log({store});
-    
+    console.log({ store });
+
     await Discussion.create({
         creator_id: admin.user_id,
-        receiver_id:store.owner_id,
+        receiver_id: store.owner_id,
         creator_opened_at: DateTime.now(),
-        to_id:store.id,
-        id:discussion_id
+        to_id: store.id,
+        id: discussion_id
     })
 
     await Message.create({
-        table_id:discussion_id,
-        table_name:Discussion.table,
+        table_id: discussion_id,
+        table_name: Discussion.table,
         text:
-`
+            `
 Bonjour ${user.name},
 
 Je me permets de vous contacter suite à votre inscription à la démo de notre plateforme. Je suis [Votre nom], membre de l'équipe de [Nom de votre plateforme], et je tiens à vous souhaiter la bienvenue !
@@ -632,7 +1023,7 @@ Bien cordialement,
 
 ${admin.name} de L'équipe Sublymus \(^_^)/
 `,
-user_id:admin.user_id,
+        user_id: admin.user_id,
     });
 
 }
