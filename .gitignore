@@ -1,8 +1,5 @@
 # First Upload
 # public/assets // desactiver
-fs 
-build
-tmp
 
 # Dependencies and AdonisJS build
 node_modules
@@ -26,3 +23,7 @@ yarn-error.log
 
 # Platform specific
 .DS_Store
+
+fs_
+build/*
+db
