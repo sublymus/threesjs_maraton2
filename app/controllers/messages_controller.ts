@@ -36,7 +36,7 @@ export default class MessagesController {
     if (context.deleted == user.id) throw new Error('Context Deleted');
     
     if (context.creator_id !== user.id && context.receiver_id !== user.id) return "Permission Denied";
-
+    
     const message_id = v4();
     const files = await createFiles({
       request,

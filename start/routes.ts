@@ -29,7 +29,6 @@ router.post('/add_moderator', [AuthController, 'add_moderator'])
 router.get('get_moderators/', [AuthController, 'get_moderators']);
 router.get('/can_manage_sublymus', [AuthController, 'can_manage_sublymus'])
 router.delete('/remove_moderator', [AuthController, 'remove_moderator'])
-
 //Product
 router.post('/create_product', [ProductsController, 'create_product']);
 router.get('/get_products', [ProductsController, 'get_products']);

@@ -641,7 +641,7 @@ async function populateStore(store: Store, user: User) {
         price: 1243,
         is_dynamic_price: 0,
         store_id: store.id,
-        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+        scene_dir: "/fs/products_scene_dir_65b6e94b-b61b-4deb-aa70-dd4485d9b67f/Ring_1",
     })
     await Product.create({
         title: "Ring 211",
@@ -702,7 +702,7 @@ async function populateStore(store: Store, user: User) {
         price: 1243,
         is_dynamic_price: 0,
         store_id: store.id,
-        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+        scene_dir: "/fs/products_scene_dir_65b6e94b-b61b-4deb-aa70-dd4485d9b67f/Ring_1",
     })
     await Product.create({
         title: "Ring 221",
@@ -763,7 +763,7 @@ async function populateStore(store: Store, user: User) {
         price: 1243,
         is_dynamic_price: 0,
         store_id: store.id,
-        scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
+        scene_dir: "/fs/products_scene_dir_65b6e94b-b61b-4deb-aa70-dd4485d9b67f/Ring_1",
     })
     await Product.create({
         title: "Ring 231",
