@@ -131,7 +131,7 @@ router.get('/', ({ response }) => {
 })
 router.get('/*', ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}`
-    console.log(params['*'][0]);
+    // console.log(request.original, request.url);
 
     if (
         params['*'][0] == 'assets' ||
