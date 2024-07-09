@@ -16,6 +16,9 @@ export default class Message extends BaseModel {
   declare table_id:  string
 
   @column()
+  declare reply_id:  string
+
+  @column()
   declare files:  string
 
   @column()

@@ -26,7 +26,7 @@ export default class MessagesController {
 
   public async send_message({ request, auth }: HttpContext) {
 
-    const { context_id, context_name, text } = request.body();
+    const { context_id, context_name, text , reply_id} = request.body();
     const user = await auth.authenticate();
 
     const context = (await db.query().from(context_name).where('id',context_id))[0] as ContextType;
@@ -54,6 +54,7 @@ export default class MessagesController {
       table_name: context_name,
       files: JSON.stringify(files),
       user_id: user.id,
+      reply_id,
       // form_id
       // rating_id
       // survey_id

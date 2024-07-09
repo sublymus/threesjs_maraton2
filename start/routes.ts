@@ -116,6 +116,15 @@ router.get('/get_commands', [CommandsController, 'get_commands'])
 router.put('/update_command', [CommandsController, 'update_command'])
 router.put('/client_confirm_command', [CommandsController, 'client_confirm_command'])
 router.delete('/delete_command/:id', [CommandsController, 'delete_command'])
+// Post
+router.post('/create_post', [PostsController, 'create_post'])
+router.get('/get_posts', [PostsController, 'get_posts'])
+// router.put('/update_command', [PostsController, ''])
+router.delete('/delete_post/:id', [PostsController, 'delete_post'])
+// Subject
+router.post('/create_subject', [SubjectsController, 'create_subject'])
+router.get('/get_subjects', [SubjectsController, 'get_subjects'])
+router.delete('/delete_subject/:id', [SubjectsController, 'delete_subject'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`, ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}` 
@@ -180,6 +189,8 @@ setTimeout(async () => {
 }, 5000);
 
 import webpush from "web-push";
+import PostsController from '#controllers/posts_controller';
+import SubjectsController from '#controllers/subjects_controller';
 
 const publicVapidKey = 'BDwYyNLBYIyNOBFX3M27uTAUXLrUxgHVyBJPjxJj3aQR7ghxC_MetHpzgTspdk4e4Iq9E0LCzeAtbCPOcdclxCk';
 const privateVapidKey = 'rOHBJ0AGjSf37QW-mPRScGNr_0Bqn6Ouk-1nQPUUPpI';

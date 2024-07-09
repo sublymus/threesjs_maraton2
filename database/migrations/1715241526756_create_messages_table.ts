@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       
       table.string('table_name')
       table.uuid('table_id')
-      
+      table.uuid('reply_id')
       table.string('text')
       table.string('files')
       table.string('audio')

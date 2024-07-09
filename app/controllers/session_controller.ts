@@ -66,7 +66,6 @@ export default class SessionController {
 
   public async create_session({ auth, request }: HttpContext) {
     const { receiver_id, store_id , title} = request.body();
-    console.log({ receiver_id, store_id , title});
     
     if(!title) throw new Error("title is required");
     

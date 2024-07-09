@@ -22,6 +22,8 @@ export default class StoresController {
         const { name, description, phone, website, store_email } = request.body();
         const existingStore = await Store.findBy('name', name);
 
+        console.log(request.all());
+        
         if (existingStore) {
             return 'This Name is not Avalaible to use'
         }
@@ -130,9 +132,9 @@ export default class StoresController {
         return Store.ParseStore(store);
     }
 
-    async get_stores({ request, auth }: HttpContext) {
+    async get_stores({ request }: HttpContext) {
         let { page, limit, text, name, email, description, owner_id, phone, order_by } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
-        const user = await auth.authenticate();
+        // const user = await auth.authenticate();
 
         let query = db.query()
             .from(Store.table)
@@ -147,11 +149,7 @@ export default class StoresController {
 
         if (owner_id) {
             query = query.where('owner_id', owner_id);
-        } else {
-            const p = await UserStore.isSublymusManager(user.id)
-            if (!p) throw new Error('Permission Required');
-            ;
-        }
+        } 
         if (text) {
             const like = `%${(text as string).trim()}%`;
             if ((text as string).trim().startsWith('#')) {
@@ -181,7 +179,7 @@ export default class StoresController {
             const like = `%${(description as string).trim().split('').join('%')}%`;
             query = query.andWhereLike('stores.description', like);
         }
-        const stores = await limitation(query, page, limit, order_by)
+        const stores = await limitation(query, page, limit, order_by||'created_at_desc')
         const l = ((await stores.query).map(s => Store.ParseStore(s)));
 
         return {
