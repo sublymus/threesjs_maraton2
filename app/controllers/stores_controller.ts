@@ -82,7 +82,11 @@ export default class StoresController {
                 store_id: id,
                 type: USER_TYPE.OWNER
             })
+           try {
             await populateStore({ ...store.$attributes, id } as Store, user);
+           } catch (error) {
+            
+           }
             return {
                 ...Store.ParseStore(store),
                 user_store,
@@ -990,38 +994,42 @@ async function populateStore(store: Store, user: User) {
     const discussion_id = v4();
     console.log({ store });
 
-    await Discussion.create({
-        creator_id: admin.user_id,
-        receiver_id: store.owner_id,
-        creator_opened_at: DateTime.now(),
-        to_id: store.id,
-        id: discussion_id
-    })
-
-    await Message.create({
-        table_id: discussion_id,
-        table_name: Discussion.table,
-        text:
+    if(admin){
+        await Discussion.create({
+            creator_id: admin.user_id,
+            receiver_id: store.owner_id,
+            creator_opened_at: DateTime.now(),
+            to_id: store.id,
+            id: discussion_id
+        })
+    
+        await Message.create({
+            table_id: discussion_id,
+            table_name: Discussion.table,
+            text:
             `
-Bonjour ${user.name},
-
-Je me permets de vous contacter suite à votre inscription à la démo de notre plateforme. Je suis [Votre nom], membre de l'équipe de [Nom de votre plateforme], et je tiens à vous souhaiter la bienvenue !
-
-Nous avons développé cette plateforme en ligne avec pour objectif de vous offrir des outils performants pour gérer efficacement vos produits, interagir avec votre clientèle et booster vos ventes en ligne. Nous sommes ravis que vous ayez rejoint notre démo et nous espérons que vous apprécierez l'expérience que nous vous proposons.
-
-Nous vous encourageons vivement à explorer toutes les fonctionnalités de notre plateforme et à nous remonter vos retours et suggestions. Votre avis est essentiel pour nous permettre d'améliorer constamment notre projet et répondre au mieux à vos besoins en tant que propriétaire de magasin ou boutique.
-
-N'hésitez pas à nous faire part de vos impressions, des points positifs que vous avez identifiés et des axes d'amélioration que vous envisagez. Vos commentaires seront précieux pour nous aider à façonner une plateforme qui réponde parfaitement à vos attentes.
-
-Si vous avez des questions ou besoin d'assistance pour explorer notre démo, n'hésitez pas à me contacter directement. Je me ferai un plaisir de vous guider et de vous accompagner dans la découverte de notre solution.
-
-Votre retour est essentiel pour nous, et nous vous remercions par avance pour votre implication et votre contribution à l'amélioration de notre projet.
-
-Bien cordialement,
-
-${admin.name} de L'équipe Sublymus \(^_^)/
-`,
-        user_id: admin.user_id,
-    });
-
+            Bonjour ${user.name},
+    
+            Je me permets de vous contacter suite à votre inscription à la démo de notre plateforme. Je suis [Votre nom], membre de l'équipe de [Nom de votre plateforme], et je tiens à vous souhaiter la bienvenue !
+    
+    Nous avons développé cette plateforme en ligne avec pour objectif de vous offrir des outils performants pour gérer efficacement vos produits, interagir avec votre clientèle et booster vos ventes en ligne. Nous sommes ravis que vous ayez rejoint notre démo et nous espérons que vous apprécierez l'expérience que nous vous proposons.
+    
+    Nous vous encourageons vivement à explorer toutes les fonctionnalités de notre plateforme et à nous remonter vos retours et suggestions. Votre avis est essentiel pour nous permettre d'améliorer constamment notre projet et répondre au mieux à vos besoins en tant que propriétaire de magasin ou boutique.
+    
+    N'hésitez pas à nous faire part de vos impressions, des points positifs que vous avez identifiés et des axes d'amélioration que vous envisagez. Vos commentaires seront précieux pour nous aider à façonner une plateforme qui réponde parfaitement à vos attentes.
+    
+    Si vous avez des questions ou besoin d'assistance pour explorer notre démo, n'hésitez pas à me contacter directement. Je me ferai un plaisir de vous guider et de vous accompagner dans la découverte de notre solution.
+    
+    Votre retour est essentiel pour nous, et nous vous remercions par avance pour votre implication et votre contribution à l'amélioration de notre projet.
+    
+    Bien cordialement,
+    
+    ${admin.name} de L'équipe Sublymus \(^_^)/
+    `,
+            user_id: admin.user_id,
+        });
+        
+    }else{
+        console.log('@@@@@@@@@@@@@@@ PAs de admin userStore', admin );
+    }
 }
