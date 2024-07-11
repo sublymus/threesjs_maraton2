@@ -6,7 +6,7 @@ import Subject from '#models/subject';
 import db from '@adonisjs/lucid/services/db';
 import { limitation } from './Tools/Utils.js';
 import UserStore from '#models/user_store';
-import User from '#models/user';
+import UserNotifContext from '#models/user_notif_context';
 
 export default class SubjectsController {
     async create_subject({ request, auth }: HttpContext) {
@@ -32,6 +32,7 @@ export default class SubjectsController {
             targs,
             user_id: user.id,
         });
+
         const newSubject = {
             ...Subject.parseSubject(subject),
             id
@@ -43,8 +44,15 @@ export default class SubjectsController {
         let query = db.query()
             .from(Subject.table)
             .select('*');
+            
         if (subject_id) {
-            return (await query.where('id', subject_id)).map(p => Subject.parseSubject(p));
+            const s =  await Subject.parseSubject((await query.where('id', subject_id))[0])
+            return {
+                list:[s],
+                page:1,
+                limit,
+                total:1
+            };
         }
         
         if (text) {
@@ -73,19 +81,7 @@ export default class SubjectsController {
             query = query.andWhere('close', close)
         }
         const l = await limitation(query, page, limit, order_by);
-        const s = (await l.query).map(p => Subject.parseSubject(p)).map(subject => new Promise(async (rev) => {
-            const user = await User.find(subject.user_id)
-            if (!user) return rev(null);
-            let t : any = []
-             try {
-               t=  JSON.parse(subject.targs)
-            } catch (error) {}
-            rev({
-                ...subject,
-                user: User.ParseUser(user),
-                targs:t
-            });
-        }));
+        const s = (await l.query).map(p => Subject.parseSubject(p))
         return {
             ...l.paging,
             list: (await Promise.allSettled(s)).filter(f => (f as any).value).map(m => (m as any).value),

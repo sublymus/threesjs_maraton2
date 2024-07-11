@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
 import { v4 } from 'uuid'
+import User from './user.js'
 
 export default class Message extends BaseModel {
   @column({ isPrimary: true })
@@ -46,15 +47,19 @@ export default class Message extends BaseModel {
   public static async setUUID (message: Message) {
     if(!message.id)message.id = v4()
   }
-public static parseMessage(m:Message){
+public static async parseMessage(m:Message){
   
   let files = [];
   try {
     files = JSON.parse((m.$attributes||m).files);
   } catch (error) { throw new Error(error.message);}
+  let user:any = await User.find(m.user_id) || undefined
+  if (user)  user = User.ParseUser(user)
+  
   return {
     ...(m.$attributes||m),
-    files
+    files,
+    user
   }
 
 }

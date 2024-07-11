@@ -1,17 +1,17 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import User, { USER_STATUS, USER_TYPE } from "#models/user";
-import env from "#start/env";
 // import { create_user_validation } from "App/Validators/AuthValidator";
 import { v4 } from "uuid";
 import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
 import { limitation, paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import UserStore from '#models/user_store';
+import { setBrowser } from './user_browsers_controller.js';
 export default class AuthController {
 
     public async google_connexion({ ally }: HttpContext) {
         return ally.use("google").redirect();
-    } 
+    }
 
     public async disconnection({ auth }: HttpContext) {
         const user = await auth.authenticate();
@@ -42,7 +42,7 @@ export default class AuthController {
         }
     }
 
-    public async google_push_info({ ally, response }: HttpContext) {
+    public async google_push_info({ ally, response, request }: HttpContext) {
         const provider = ally.use('google');
         console.log({ google: 'google_push_info' });
 
@@ -61,8 +61,9 @@ export default class AuthController {
             return "google request user email";
         }
 
-        const user = await User.findBy("email", email);
-
+        let user = await User.findBy("email", email);
+        let token: string | undefined;
+        let data :any;
         if (user) {
 
             if (user.status == USER_STATUS.NEW) {
@@ -72,17 +73,18 @@ export default class AuthController {
                 user.status = USER_STATUS.VISIBLE
                 await user.save();
             }
-
-            return response
-                .redirect()
-                .toPath(`${env.get('FRONT_ORIGINE')}/auth#=${JSON.stringify({
-                    token: (await User.accessTokens.create(user)).value?.release(),
-                    ...User.ParseUser(user)
-                })
-                    }`);
+            token = (await User.accessTokens.create(user)).value?.release();
+            data = {
+                token,
+                ...User.ParseUser(user)
+            }
+            // response
+            //     .redirect()
+            //     .toPath(`${env.get('FRONT_ORIGINE')}/auth#=${JSON.stringify()
+            //         }`);
         } else {
             const user_id = v4();
-            const newUser = await User.create({
+            user = await User.create({
                 id: user_id,
                 email,
                 name,
@@ -90,27 +92,57 @@ export default class AuthController {
                 status: USER_STATUS.VISIBLE,
                 photos: JSON.stringify([avatarUrl]),
             })
-            newUser.id = user_id;
-            newUser.$attributes.id = user_id;
+            user.id = user_id;
+            user.$attributes.id = user_id;
             //await _create_client( {name, email, password}, auth )
-            response.redirect().toPath(`${env.get('FRONT_ORIGINE')}/auth#=${JSON.stringify({
-                token: (await User.accessTokens.create(newUser)).value?.release(),
+            token = (await User.accessTokens.create(user)).value?.release();
+            data = {
+                token,
                 ...JSON.parse(JSON.stringify({
-                    ...newUser.$attributes,
-                    photos: JSON.parse(newUser.photos || '[]'),
+                    ...user.$attributes,
+                    photos: JSON.parse(user.photos || '[]'),
                 }))
-            })
-                }`);
+            }
+            // response.redirect().toPath(`${env.get('FRONT_ORIGINE')}/auth#=${JSON.stringify()
+            //     }`);
         }
+
+        console.log(request)
+
+        response.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Document</title>
+        </head>
+        
+        <body>
+        
+            <script type="module">
+                const user = ${JSON.stringify(data)}
+        
+                window.addEventListener('DOMContentLoaded', () => {
+                    const u =  JSON.stringify(user);
+                    localStorage.setItem('user',u)
+                    window.close();
+                })
+            </script>
+        
+        </body>
+        
+        </html>
+        `)
     }
 
 
-    async me({ auth }: HttpContext) {
+    async me({ auth, request }: HttpContext) {
         const user = await auth.authenticate()
-        const userAtt = User.ParseUser(user);
-
+        setBrowser(user, request)
         return {
-            ...userAtt,
+            ...User.ParseUser(user),
             token: user.currentAccessToken.value
         };
     }
@@ -192,7 +224,7 @@ export default class AuthController {
             list: (await users.query).map(u => User.ParseUser(u))
         }
     }
-async get_moderators({ request /*, auth*/ }: HttpContext) {
+    async get_moderators({ request /*, auth*/ }: HttpContext) {
         let { page, limit, name, email, user_id, phone, order_by, text } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
         // const user = await auth.authenticate();
         // if (!await UserStore.isSublymusManager(user.id)) throw new Error('Permission Required');
@@ -245,8 +277,8 @@ async get_moderators({ request /*, auth*/ }: HttpContext) {
         const { email, role_id } = request.body();
 
         const user = await auth.authenticate();
-        if(!await UserStore.isSublymusManager(user.id)) return  'Permission Required';
-        
+        if (!await UserStore.isSublymusManager(user.id)) return 'Permission Required';
+
         let moderator = await User.findBy('email', email);
 
         let cid = '';
@@ -279,18 +311,18 @@ async get_moderators({ request /*, auth*/ }: HttpContext) {
         });
 
         return {
-            ...userStore.$attributes, 
+            ...userStore.$attributes,
             ...User.ParseUser(moderator),
             join_at: userStore.createdAt,
-            s_type:userStore.type,
-            id:cid
+            s_type: userStore.type,
+            id: cid
         }
     }
     async remove_moderator({ request, auth }: HttpContext) {
         const { moderator_id } = request.body();
         const user = await auth.authenticate();
-        if(!await UserStore.isSublymusManager(user.id)) return  'Permission Required';
-        
+        if (!await UserStore.isSublymusManager(user.id)) return 'Permission Required';
+
 
         const moderator_store = (await UserStore.query().where('user_id', moderator_id).andWhereNull('store_id').andWhere('type', USER_TYPE.MODERATOR))[0];
         if (!moderator_store) throw new Error('moderator_store');

@@ -15,6 +15,11 @@ import CommandsController from '#controllers/commands_controller';
 import User, { AdminEmails, USER_STATUS, USER_TYPE } from '#models/user';
 import { v4 } from 'uuid';
 import UserStore from '#models/user_store';
+import webpush from "web-push";
+import PostsController from '#controllers/posts_controller';
+import SubjectsController from '#controllers/subjects_controller';
+import UserBrowsersController from '#controllers/user_browsers_controller';
+import UserNotifContextsController from '#controllers/user_notif_contexts_controller';
 
 //Auth
 router.get('/google_connexion', [AuthController, 'google_connexion']);
@@ -125,6 +130,16 @@ router.delete('/delete_post/:id', [PostsController, 'delete_post'])
 router.post('/create_subject', [SubjectsController, 'create_subject'])
 router.get('/get_subjects', [SubjectsController, 'get_subjects'])
 router.delete('/delete_subject/:id', [SubjectsController, 'delete_subject'])
+// UserBrowsersController
+router.get('/get_user_browsers', [UserBrowsersController, 'get_user_browsers'])
+router.put('/disable_notifications', [UserBrowsersController, 'disable_notifications'])
+router.put('/enable_notifications', [UserBrowsersController, 'enable_notifications'])
+router.put('/set_notification_data', [UserBrowsersController, 'set_notification_data'])
+router.delete('/remove_user_browser/:id', [UserBrowsersController, 'remove_user_browser'])
+// UserNotifContextsController
+router.post('/add_notif_context', [UserNotifContextsController, 'add_notif_context'])
+router.get('/get_notif_contexts', [UserNotifContextsController, 'get_notif_contexts'])
+router.delete('/romove_notif_context/:id', [UserNotifContextsController, 'romove_notif_context'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`, ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}` 
@@ -155,7 +170,6 @@ router.get('/*', ({ params, response }) => {
     }
 })
 
-
 setTimeout(async () => {
     for (const email of AdminEmails) {
         let admin = await User.findBy('email',email);
@@ -181,34 +195,33 @@ setTimeout(async () => {
                 user_id: admin.id,
                 type: USER_TYPE.ADMIN,
             });
-            console.log('*********** NEW ADMIN ', admin.email,  await User.findBy('email',email));
+            console.log('*********** NEW ADMIN ', admin.email,  (await User.findBy('email',email))?.$attributes);
         }else{
             console.log(us.$attributes); 
         }
     }
 }, 5000);
 
-import webpush from "web-push";
-import PostsController from '#controllers/posts_controller';
-import SubjectsController from '#controllers/subjects_controller';
 
 const publicVapidKey = 'BDwYyNLBYIyNOBFX3M27uTAUXLrUxgHVyBJPjxJj3aQR7ghxC_MetHpzgTspdk4e4Iq9E0LCzeAtbCPOcdclxCk';
 const privateVapidKey = 'rOHBJ0AGjSf37QW-mPRScGNr_0Bqn6Ouk-1nQPUUPpI';
 
 webpush.setVapidDetails('mailto:sublymus@gmail.com', publicVapidKey, privateVapidKey);
 
-router.post('/subscribe', ({request, response}) => {
+const list:any[] = [];
+router.post('/add_context_notifier', ({request, response}) => {
     // Get pushSubscription object
     const subscription = request.body();
-    console.log(subscription);
-    
+    list.push(subscription);
     // Send 201 - resource created
     response.status(201).json({});
     // Create payload
-    // const payload = JSON.stringify({title: "Push Test", content: "Push Content"});
     // webpush.sendNotification(subscription as any, payload).catch(err => console.error(err));
     // Pass object into sendNotification
     setTimeout(()=>{
-        // webpush.sendNotification(subscription as any, payload).catch(err => console.error(err));
-    }, 5000)
+        list.forEach(s=>{
+            // const payload = JSON.stringify({title: JSON.stringify(s), content: "Push Content"});
+            // webpush.sendNotification(s as any,payload ).catch(err => console.error(err));
+        })
+    }, 1000)
 }); 

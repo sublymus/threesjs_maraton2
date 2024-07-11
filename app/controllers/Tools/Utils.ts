@@ -17,12 +17,12 @@ export function paginate<T extends {page:number|undefined,limit:number|undefined
 }
 
 export async function limitation(query: DatabaseQueryBuilderContract<any>, page:number, limit:number, order_by?:string) {
-    const total = Math.max((await query).length, 1);
+    const total = (await query).length
     limit = limit ||25
     limit = limit >50?50:limit<1?1:limit
     page = page||1
     page = page <1 ? 1 :page
-    let pages = Math.ceil(total / limit);
+    let pages = Math.max(Math.ceil(total / limit),1);
     page = pages < page ? pages : page;
     query = query.limit(limit).offset((page - 1) * limit);
     if (order_by) {
