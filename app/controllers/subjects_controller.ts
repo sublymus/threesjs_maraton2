@@ -6,7 +6,6 @@ import Subject from '#models/subject';
 import db from '@adonisjs/lucid/services/db';
 import { limitation } from './Tools/Utils.js';
 import UserStore from '#models/user_store';
-import UserNotifContext from '#models/user_notif_context';
 
 export default class SubjectsController {
     async create_subject({ request, auth }: HttpContext) {

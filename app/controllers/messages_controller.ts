@@ -71,7 +71,6 @@ export default class MessagesController {
 
       for (const c of user_contexts) {
         let browsers = await UserBrowser.query().where('user_id', c.user_id);
-        console.log('--->', c);
         if (c.user_id != user.id) {
           for (const b of browsers) {
             console.log('==>', b);
@@ -91,12 +90,12 @@ export default class MessagesController {
     return { ...message.$attributes, id: message_id, files };
   }
   public async get_messages({ request, auth }: HttpContext) {
-    let { context_id, context_name, limit, page } = paginate(request.qs() as any);
+    let { context_id, context_name, limit, page, order_by } = paginate(request.qs() as any);
     const n = context_name as ContextName;
 
     const query = db.query().from(Message.table)
       .where("table_id", context_id);
-    const p = await limitation(query, page, limit, 'created_at_desc');
+    const p = await limitation(query, page, limit, order_by||'created_at_desc');
 
     const context = await contextMap[n].find(context_id);
     // console.log({context_id, user:user.email});
@@ -121,7 +120,7 @@ export default class MessagesController {
       transmit.broadcast(context_id, { reload: true })
     }
 
-    const list = (await p.query).map(m => Message.parseMessage(m)).reverse();
+    const list = (await p.query).map(m => Message.parseMessage(m))
 
     return {
       ...p.paging,

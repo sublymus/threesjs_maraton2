@@ -2,6 +2,8 @@ import { DateTime } from 'luxon'
 import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
 import { v4 } from 'uuid'
 import User from './user.js'
+import db from '@adonisjs/lucid/services/db'
+import Message from './message.js'
 
 export default class Subject extends BaseModel {
 
@@ -56,7 +58,8 @@ export default class Subject extends BaseModel {
       ...(p.$attributes || p),
       files,
       targs: t,
-      user
+      user,
+      count: (await db.query().from(Message.table).select('id').where('table_id', p.id)).length,
     }
   }
 }
