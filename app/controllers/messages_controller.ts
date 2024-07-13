@@ -85,8 +85,9 @@ export default class MessagesController {
 
     } catch (error) { }
 
+console.log(message.table_id, context_id);
 
-    transmit.broadcast(message.table_id, { reloadMessage: true })
+    transmit.broadcast(context_id, { reloadMessage: true })
     return { ...message.$attributes, id: message_id, files };
   }
   public async get_messages({ request, auth }: HttpContext) {
