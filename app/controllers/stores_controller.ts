@@ -484,9 +484,10 @@ export default class StoresController {
         const collaborators = (await db.from(UserStore.table).where('store_id', store_id).andWhere((qr) => {
             qr.where('type', USER_TYPE.OWNER).orWhere('type', USER_TYPE.COLLABORATOR)
         }).count('id as count'))[0]?.count;
+        // const list = []
         const moderators = (await db.from(UserStore.table).whereNull('store_id').andWhere((qr) => {
             qr.where('type', USER_TYPE.ADMIN).orWhere('type', USER_TYPE.MODERATOR)
-        }).count('id as count'))[0]?.count;
+        }).count('id as count').groupBy('user_id'))[0]?.count;
         const clients = (await db.from(UserStore.table).where('store_id', store_id).andWhere('type', USER_TYPE.CLIENT).count('id as count'))[0]?.count;
 
         return {

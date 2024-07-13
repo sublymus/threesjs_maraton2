@@ -67,11 +67,11 @@ export default class MessagesController {
 
 
     try {
-      let user_contexts = await UserNotifContext.query().where('context_id', context_id).where('context_name', context_name);
+      let user_contexts = await UserNotifContext.query().where('context_id', context_id)//.where('context_name', context_name);
 
       for (const c of user_contexts) {
         let browsers = await UserBrowser.query().where('user_id', c.user_id);
-        if (c.user_id != user.id) {
+        //if (c.user_id != user.id) {
           for (const b of browsers) {
             console.log('==>', b);
 
@@ -80,7 +80,7 @@ export default class MessagesController {
               if (b.notification_data) webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(err => console.error(err));
             } catch (error) { }
           }
-        }
+       // }
       }
 
     } catch (error) { }

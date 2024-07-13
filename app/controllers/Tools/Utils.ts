@@ -26,8 +26,8 @@ export async function limitation(query: DatabaseQueryBuilderContract<any>, page:
     page = pages < page ? pages : page;
     query = query.limit(limit).offset((page - 1) * limit);
     if (order_by) {
-        if (order_by == 'date_asc') query = query.orderBy("stores.created_at", "asc");
-        else if (order_by == 'date_desc') query = query.orderBy("stores.created_at", "desc");
+        if (order_by == 'date_asc') query = query.orderBy("created_at", "asc");
+        else if (order_by == 'date_desc') query = query.orderBy("created_at", "desc");
         else {
             const o = (order_by as string)
             const c = o.substring(0, o.lastIndexOf('_'));
