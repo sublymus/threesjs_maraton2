@@ -139,7 +139,7 @@ router.delete('/remove_user_browser/:id', [UserBrowsersController, 'remove_user_
 // UserNotifContextsController
 router.post('/add_notif_context', [UserNotifContextsController, 'add_notif_context'])
 router.get('/get_notif_contexts', [UserNotifContextsController, 'get_notif_contexts'])
-router.delete('/romove_notif_context/:id', [UserNotifContextsController, 'romove_notif_context'])
+router.delete('/remove_notif_context/:id', [UserNotifContextsController, 'remove_notif_context'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`, ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}` 

@@ -81,7 +81,7 @@ export default class MessagesController {
               console.log('==>', b.$attributes);
               b.notification_data = null;
               await b.save()
-            });
+            }); 
           } catch (error) {
             console.log(error);
 

@@ -107,8 +107,6 @@ export default class AuthController {
             //     }`);
         }
 
-        console.log(request)
-
         response.send(`
         <!DOCTYPE html>
         <html lang="en">
@@ -140,12 +138,12 @@ export default class AuthController {
 
     async me({ auth, request }: HttpContext) {
         const user = await auth.authenticate()
-        setBrowser(user, request)
+        setBrowser(user, request) 
         return {
             ...User.ParseUser(user),
-            token: user.currentAccessToken.value
+            // token:  request.headers().authorization?.split(' ')[1]
         };
-    }
+    } 
     async edit_me({ request, auth }: HttpContext) {
         const body = request.body();
         let urls: Record<string, string[]> = {};

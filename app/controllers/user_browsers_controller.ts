@@ -9,12 +9,10 @@ export async function setBrowser(user: User & {
 }, request: HttpContext['request']) {
 
 
-  const token = user.currentAccessToken.value?.toString();
-
   const user_browser = (await UserBrowser.query().where('user_id', user.id).where('user_agent', request.headers()['user-agent'] || '').limit(1))[0];
-
+  const token = request.headers().authorization?.split(' ')[1] || '';
   if (user_browser) {
-    user_browser.token = token || '';
+    user_browser.token = token;
     await user_browser.save()
   } else {
     await UserBrowser.create({
@@ -25,7 +23,7 @@ export async function setBrowser(user: User & {
       user_agent: request.headers()['user-agent']
     })
   }
-
+  return user_browser
 }
 export default class UserBrowsersController {
 
@@ -68,21 +66,17 @@ export default class UserBrowsersController {
   async set_notification_data({ request, auth }: HttpContext) {
     const { notification_data } = request.body();
     const user = await auth.authenticate();
-    const user_browser = (await UserBrowser.query().where('user_id', user.id).where('user_agent', request.headers()['user-agent'] || '').limit(1))[0];
-    if (user_browser) {
-
-      user_browser.token = request.headers().authorization?.split(' ')[1] || '';
-      user_browser.notification_data = notification_data
-      await user_browser.save()
-    } else {
-      console.log('new is requied');
-    }
+    
+    const user_browser = await setBrowser(user, request);
+    user_browser.token = request.headers().authorization?.split(' ')[1] || '';
+    user_browser.notification_data = notification_data
+    await user_browser.save();
   }
   async get_user_browsers({ request, auth }: HttpContext) {
     const { user_id, user_agent, user_browser_id, enable } = request.qs()
     const user = await auth.authenticate();
     let query = UserBrowser.query()
-    
+
     if (user_agent) query = query.where('user_agent', user_agent);
     if (user_browser_id) query = query.where('id', user_browser_id);
     if (enable == false || enable == 'false') query = query.whereNull('enable');
