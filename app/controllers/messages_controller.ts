@@ -9,9 +9,10 @@ import { DateTime } from 'luxon';
 import db from '@adonisjs/lucid/services/db';
 import Session from '#models/session';
 import Subject from '#models/subject';
-import UserNotifContext from '#models/user_notif_context';
-import UserBrowser from '#models/user_browser';
-import webpush from "web-push";
+// import UserNotifContext from '#models/user_notif_context';
+// import UserBrowser from '#models/user_browser';
+// import webpush from "web-push";
+import UserNotifContextsController from './user_notif_contexts_controller.js';
 
 type ContextName = 'discussions' | 'sessions';
 type ContextType = {
@@ -65,41 +66,16 @@ export default class MessagesController {
     });
     // console.log(message.text);
 
+    UserNotifContextsController._push_notification({
+      content:message.text. substring(0, 100),
+      context_id,
+      title:'New Message',
+      user_id : user.id
+    })
 
-    try {
-      let user_contexts = await UserNotifContext.query().where('context_id', context_id)//.where('context_name', context_name);
-
-      for (const c of user_contexts) {
-        let browsers = await UserBrowser.query().where('user_id', c.user_id);
-        //if (c.user_id != user.id) {
-        for (const b of browsers) {
-
-
-          const payload = JSON.stringify({ title: 'New Message', content: message.text.substring(0, 100) });
-          try {
-            if (b.notification_data) {
-              console.log('@@@@@@@@@@@=>' , b.$attributes);
-              
-              webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(async () => {
-                console.log('==>', b.$attributes);
-                b.notification_data = null;
-                await b.save()
-              });
-            }
-
-          } catch (error) {
-            console.log(error);
-
-          }
-        }
-        // }
-      }
-
-    } catch (error) { }
-
-    console.log(message.table_id, context_id);
 
     transmit.broadcast(context_id, { reloadMessage: true })
+
     return { ...message.$attributes, id: message_id, files };
   }
   public async get_messages({ request, auth }: HttpContext) {

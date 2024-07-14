@@ -1,6 +1,8 @@
 import User from '#models/user';
+import UserBrowser from '#models/user_browser';
 import UserNotifContext from '#models/user_notif_context';
 import type { HttpContext } from '@adonisjs/core/http'
+import webpush from "web-push";
 export default class UserNotifContextsController {
     async add_notif_context({ request, auth }: HttpContext) {
         const { context_name, context_id } = request.body();
@@ -52,5 +54,33 @@ export default class UserNotifContextsController {
         return {
             deleted: false
         }
+    }
+
+    static async _push_notification({user_id, context_id, title ,content}:{context_id:string,user_id:string,title:string,content:string}){
+
+    try {
+        let user_contexts = await UserNotifContext.query().where('context_id', context_id)//.where('context_name', context_name);
+  
+        for (const c of user_contexts) {
+          let browsers = await UserBrowser.query().where('user_id', c.user_id);
+          if (c.user_id != user_id) {
+            for (const b of browsers) {
+              const payload = JSON.stringify({ title, content });
+              try {
+                if (b.notification_data) {
+                  webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(async () => {
+                    console.log('==>', b.$attributes);
+                    b.notification_data = null;
+                    await b.save()
+                  });
+                }
+              } catch (error) {
+                console.log(error);
+              }
+            }
+          }
+        }
+  
+      } catch (error) { }
     }
 }
