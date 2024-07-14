@@ -220,9 +220,9 @@ router.post('/add_context_notifier', ({request, response}) => {
     // Pass object into sendNotification
     setTimeout(()=>{
         list.forEach(s=>{
-            console.log('Push ==>> ', {
+            // console.log('Push ==>> ', {
                 
-            });
+            // });
             
             const payload = JSON.stringify({title:'new Message', content: "Push Content"});
             webpush.sendNotification(s as any,payload ).catch(err => console.error(err));
