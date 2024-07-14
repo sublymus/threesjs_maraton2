@@ -72,22 +72,27 @@ export default class MessagesController {
       for (const c of user_contexts) {
         let browsers = await UserBrowser.query().where('user_id', c.user_id);
         //if (c.user_id != user.id) {
-          for (const b of browsers) {
-           
+        for (const b of browsers) {
 
-            const payload = JSON.stringify({ title: 'New Message', content: message.text.substring(0, 100) });
-            try {
-              if (b.notification_data) webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(err =>  console.log('==>', b.$attributes));
-            } catch (error) { 
+
+          const payload = JSON.stringify({ title: 'New Message', content: message.text.substring(0, 100) });
+          try {
+            if (b.notification_data) webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(async () => {
               console.log('==>', b.$attributes);
-            }
+              b.notification_data = null;
+              await b.save()
+            });
+          } catch (error) {
+            console.log(error);
+
           }
-       // }
+        }
+        // }
       }
 
     } catch (error) { }
 
-console.log(message.table_id, context_id);
+    console.log(message.table_id, context_id);
 
     transmit.broadcast(context_id, { reloadMessage: true })
     return { ...message.$attributes, id: message_id, files };
@@ -98,7 +103,7 @@ console.log(message.table_id, context_id);
 
     const query = db.query().from(Message.table)
       .where("table_id", context_id);
-    const p = await limitation(query, page, limit, order_by||'created_at_desc');
+    const p = await limitation(query, page, limit, order_by || 'created_at_desc');
 
     const context = await contextMap[n].find(context_id);
     // console.log({context_id, user:user.email});

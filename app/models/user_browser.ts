@@ -13,7 +13,7 @@ export default class UserBrowser extends BaseModel {
   declare user_agent: string
 
   @column()
-  declare notification_data: string
+  declare notification_data: string | null
 
   @column()
   declare token: string
