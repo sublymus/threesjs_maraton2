@@ -73,7 +73,7 @@ export default class MessagesController {
         let browsers = await UserBrowser.query().where('user_id', c.user_id);
         //if (c.user_id != user.id) {
           for (const b of browsers) {
-            console.log('==>', b);
+            console.log('==>', b.$attributes);
 
             const payload = JSON.stringify({ title: 'New Message', content: message.text.substring(0, 100) });
             try {
