@@ -73,12 +73,14 @@ export default class MessagesController {
         let browsers = await UserBrowser.query().where('user_id', c.user_id);
         //if (c.user_id != user.id) {
           for (const b of browsers) {
-            console.log('==>', b.$attributes);
+           
 
             const payload = JSON.stringify({ title: 'New Message', content: message.text.substring(0, 100) });
             try {
-              if (b.notification_data) webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(err => console.error(err));
-            } catch (error) { }
+              if (b.notification_data) webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(err =>  console.log('==>', b.$attributes));
+            } catch (error) { 
+              console.log('==>', b.$attributes);
+            }
           }
        // }
       }
