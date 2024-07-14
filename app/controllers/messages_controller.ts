@@ -77,11 +77,16 @@ export default class MessagesController {
 
           const payload = JSON.stringify({ title: 'New Message', content: message.text.substring(0, 100) });
           try {
-            if (b.notification_data) webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(async () => {
-              console.log('==>', b.$attributes);
-              b.notification_data = null;
-              await b.save()
-            }); 
+            if (b.notification_data) {
+              console.log('@@@@@@@@@@@=>' , b.$attributes);
+              
+              webpush.sendNotification(JSON.parse(b.notification_data) as any, payload).catch(async () => {
+                console.log('==>', b.$attributes);
+                b.notification_data = null;
+                await b.save()
+              });
+            }
+
           } catch (error) {
             console.log(error);
 

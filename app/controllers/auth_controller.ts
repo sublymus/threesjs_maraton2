@@ -42,7 +42,7 @@ export default class AuthController {
         }
     }
 
-    public async google_push_info({ ally, response, request }: HttpContext) {
+    public async google_push_info({ ally, response }: HttpContext) {
         const provider = ally.use('google');
         console.log({ google: 'google_push_info' });
 

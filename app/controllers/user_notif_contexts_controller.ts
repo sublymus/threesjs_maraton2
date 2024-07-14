@@ -1,8 +1,6 @@
 import User from '#models/user';
 import UserNotifContext from '#models/user_notif_context';
 import type { HttpContext } from '@adonisjs/core/http'
-import db from '@adonisjs/lucid/services/db';
-
 export default class UserNotifContextsController {
     async add_notif_context({ request, auth }: HttpContext) {
         const { context_name, context_id } = request.body();
@@ -13,7 +11,6 @@ export default class UserNotifContextsController {
     }
     async _add_notif_context({context_id,context_name,user}:{context_name:string, context_id:string ,user:User}) {
         let user_context = (await UserNotifContext.query().where('user_id', user.id).where('context_name', context_name).where('context_id', context_id).limit(1))[0];
-        console.log({context_id, context_name});
         
         if (!user_context) {
             user_context = await UserNotifContext.create({
