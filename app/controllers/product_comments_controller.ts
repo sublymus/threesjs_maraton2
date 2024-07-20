@@ -1,7 +1,6 @@
 import Product from '#models/product';
 import ProductComment from '#models/product_comment'
 import type { HttpContext } from '@adonisjs/core/http'
-import { v4 } from 'uuid'
 import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import db from '@adonisjs/lucid/services/db';
 import { limitation } from './Tools/Utils.js';
@@ -71,7 +70,7 @@ export default class ProductCommentsController {
         return ProductComment.parseComment(newComment)
 
     }
-    async get_product_comments_files({ request, auth }: HttpContext) {
+    async get_product_comments_files({ request }: HttpContext) {
         const { product_id, page, limit } = request.qs()
         let query = db.query().from(ProductComment.table)
         if (product_id) {
@@ -92,7 +91,6 @@ export default class ProductCommentsController {
     }
     async get_comment_index({ request }: HttpContext) {
         let { comment_id, product_id, move } = request.qs()
-        console.log({ comment_id, product_id, move } )
         const all = (await db.query()
             .where('product_id', product_id)
             .from(ProductComment.table)
@@ -183,8 +181,6 @@ export default class ProductCommentsController {
     }
     async get_product_comments({ request, auth }: HttpContext) {
         const { order_by, first_index, comment_id, with_photo_or_video, with_photo, with_video, user_id, product_id, page, limit } = request.qs()
-
-        console.log({ order_by, first_index, comment_id, with_photo_or_video, with_photo, with_video, user_id, product_id, page, limit });
 
         let query = db.query().from(ProductComment.table)
         if (comment_id) {
