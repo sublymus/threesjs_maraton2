@@ -40,10 +40,10 @@ export default class Post extends BaseModel {
   declare close: number
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  declare created_at: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  declare updated_at: DateTime
 
   @beforeSave()
   public static async setUUID(post: Post) {
@@ -54,7 +54,7 @@ export default class Post extends BaseModel {
     let files = [];
     try {
       files = JSON.parse((p.$attributes || p).files);
-    } catch (error) { throw new Error(error.message); }
+    } catch (error) { }
     return {
       ...(p.$attributes || p),
       files

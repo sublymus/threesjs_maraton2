@@ -394,8 +394,11 @@ export default class StoresController {
             })
         }
 
+        const manager = await UserStore.isStoreManagerOrMore(user.id, store.id)
+
         return userStore && {
-            userStoree: UserStore.parseUserStore(userStore),
+            userStore: UserStore.parseUserStore(userStore),
+            manager: manager && UserStore.parseUserStore(manager),
             user: {
                 ...User.ParseUser(user),
                 token: user.currentAccessToken.value,

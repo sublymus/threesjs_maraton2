@@ -68,10 +68,10 @@ export default class Feature extends BaseModel {
   declare store_id: string
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  declare created_at: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  declare updated_at: DateTime
 
   @beforeSave()
   public static async setUUID(a: Feature) {

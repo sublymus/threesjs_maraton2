@@ -311,7 +311,7 @@ export default class AuthController {
         return {
             ...userStore.$attributes,
             ...User.ParseUser(moderator),
-            join_at: userStore.createdAt,
+            join_at: userStore.created_at,
             s_type: userStore.type,
             id: cid
         }

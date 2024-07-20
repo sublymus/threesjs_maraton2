@@ -25,10 +25,10 @@ export default class Catalog extends BaseModel {
   declare store_id: string
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  declare created_at: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  declare updated_at: DateTime
 
   @beforeSave()
   public static async setUUID (catalog: Catalog) {

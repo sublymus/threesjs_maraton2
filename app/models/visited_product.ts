@@ -10,5 +10,5 @@ export default class VisitedProduct extends BaseModel {
   declare client_id : string;
   
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime 
+  declare created_at: DateTime 
 }

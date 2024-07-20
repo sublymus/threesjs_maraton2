@@ -68,8 +68,8 @@ export default class RolesController {
 
         return {
             ...role.$attributes,
-            created_at: role.createdAt,
-            updated_at: role.updatedAt,
+            created_at: role.created_at,
+            updated_at: role.updated_at,
             id
         }
     }
@@ -119,8 +119,8 @@ export default class RolesController {
 
         return {
             ...role.$attributes,
-            created_at: role.createdAt,
-            updated_at: role.updatedAt,
+            created_at: role.created_at,
+            updated_at: role.updated_at,
             id
         }
     }

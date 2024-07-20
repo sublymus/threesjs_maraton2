@@ -24,10 +24,10 @@ export default class UserStore extends BaseModel {
   declare store_id : string
  
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  declare created_at: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  declare updated_at: DateTime
 
   @beforeSave()
   public static async setUUID (userStore: UserStore) {
@@ -78,7 +78,7 @@ export default class UserStore extends BaseModel {
 
   public static parseUserStore(userStore:UserStore){
     const s = (userStore.$attributes|| userStore);
-    return {...s,join_at : (s.createdAt|| s.created_at) }
+    return {...s,join_at : (s.created_at|| s.created_at) }
   }
 }
 

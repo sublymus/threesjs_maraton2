@@ -52,17 +52,17 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  declare created_at: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime | null
+  declare updated_at: DateTime | null
 
   @beforeSave()
   public static async setUUID (user: User) {
    if(!user.id)user.id = v4()
   }
 
-  public static ParseUser(user: User) {
+  public static ParseUser(user: User['$attributes']) {
     let photos = [];
     try {
       photos = JSON.parse(user.photos || '[]')

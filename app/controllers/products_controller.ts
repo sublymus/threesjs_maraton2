@@ -14,10 +14,11 @@ import Category from '#models/category';
 import User from '#models/user';
 import VisitedProduct from '#models/visited_product';
 import { DateTime } from 'luxon';
+import ProductComment from '#models/product_comment';
 
 export default class ProductsController {
     async create_product({ request, auth }: HttpContext) {
-        const { title, description, features_id, price, stock, category_id, is_dynamic_price } = request.body();
+        const {detail_json, title, description, features_id, price, stock, category_id, is_dynamic_price } = request.body();
 
         const category = await Category.find(category_id);
         if (!category) throw new Error("Category not found");
@@ -81,14 +82,14 @@ export default class ProductsController {
                 price,
                 collaborator_id: v4(),
                 store_id: category.store_id,
-                keywords: 'noga'
+                keywords: 'noga',
+                detail_json
             })
             product.id = product_id;
             const features = await FeaturesController._get_features_of_product({ product_id });
             return Product.clientProduct(product, { features });
         } catch (error) {
             console.log(error);
-
             await deleteFiles(product_id);
         }
     }
@@ -111,7 +112,8 @@ export default class ProductsController {
             'is_dynamic_price',
             'stock',
             'category_id',
-            'price'
+            'price',
+            'detail_json'
         ] as const).forEach((attribute: any) => {
             //@ts-ignore
             if (body[attribute]) product[attribute] = body[attribute];
@@ -178,9 +180,6 @@ export default class ProductsController {
     async get_products({ request, auth }: HttpContext) {                               // price_desc price_asc date_desc date_asc
 
         let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required, all_status, store_id, product_id , by_product_category } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
-        console.log({
-            all_status, store_id, product_id , by_product_category 
-        });
         
         let query = db.query().from(Product.table).select('*');
 
@@ -196,7 +195,7 @@ export default class ProductsController {
                 const p = await Product.findOrFail(product_id);
                 query = query.andWhere('category_id', p.category_id);
             }else{
-                query = query.andWhere('id', product_id);
+               
             }
         }
         if (all_status) {
@@ -214,12 +213,12 @@ export default class ProductsController {
             });
         }
         if (text) {
-            const like = `%${(text as string).split('').join('%')}%`;
+            const like = `%${text}%`;
             if ((text as string).startsWith('#')) {
                 query = query.andWhereLike('id', like.replaceAll('#', ''));
             } else {
                 query = query.andWhere((q) => {
-                    q.whereLike('title', like).orWhereLike('description', like);
+                    q.whereLike('title', like).orWhereLike('description', like).orWhereLike('detail_json',like);
                 });
             }
         }
@@ -233,26 +232,35 @@ export default class ProductsController {
                 q.whereBetween('stock', [stock_min || 0, stock_max || Number.MAX_VALUE]);
             });
         } 
-
         const p = await limitation(query, page, limit, order_by)
         const products = await p.query;
+
+        const starsPromise = products.map((product) => new Promise(async (rev) => {
+            try {
+                product.note =  await ProductComment.calculProductNote(product.id)
+                rev(null)
+            } catch (error) {
+                console.log('is_features_required', error.message)
+            }
+        }))
 
         if (is_features_required) {
             const promises = products.map((product) => new Promise(async (rev) => {
                 try {
                     const features = await FeaturesController._get_features_of_product({ product_id: product.id });
-                    rev(Product.clientProduct(product, { features }))
+                    Product.clientProduct(product, { features })
+                    rev(null)
                 } catch (error) {
                     console.log('is_features_required', error.message)
                 }
-            }))
-            const fullProduct = (await Promise.allSettled(promises)).map(m => (m as any).value);
+            }));
+            (await Promise.allSettled([Promise.allSettled(starsPromise),Promise.allSettled(promises)])).map(m => (m as any).value);
             return {
                 ...p.paging,
-                list: fullProduct,
+                list: products ,
             };
         }
-
+        await Promise.allSettled(starsPromise)
         return {
             ...p.paging,
             list: products.map(p => Product.clientProduct(p))
@@ -292,7 +300,7 @@ export default class ProductsController {
             //         client_id:user.id
             //     }
             //   )
-            await VisitedProduct.query().where('product_id', product_id).andWhere('client_id', user.id).limit(1).update({ createdAt: DateTime.now().toString()});
+            await VisitedProduct.query().where('product_id', product_id).andWhere('client_id', user.id).limit(1).update({ created_at: DateTime.now().toString()});
             return {
                 success: true
             }

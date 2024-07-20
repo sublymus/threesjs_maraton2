@@ -2,15 +2,15 @@ import { DateTime } from 'luxon'
 import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
 import { v4 } from 'uuid'
 
-enum PRODUCT_STATUS{
-  PAUSE='PAUSE',VISIBLE='VISIBLE',TRASH='TRASH',
-} 
+enum PRODUCT_STATUS {
+  PAUSE = 'PAUSE', VISIBLE = 'VISIBLE', TRASH = 'TRASH',
+}
 
 export default class Product extends BaseModel {
-  
-  
 
-  public static STATUS  =  PRODUCT_STATUS;
+
+
+  public static STATUS = PRODUCT_STATUS;
 
   @column({ isPrimary: true })
   declare id: string
@@ -28,59 +28,68 @@ export default class Product extends BaseModel {
   declare model_images: string //json string[]
 
   @column()
-  declare status: string  
+  declare status: string
 
   @column()
-  declare stock: number  
-  
+  declare stock: number
+
   @column()
-  declare keywords : string
+  declare keywords: string
   @column()
-  declare category_id: string  
-  
+  declare category_id: string
+
   @column()
   declare price: number
-  
+
   @column()
   declare is_dynamic_price: number
-    
+
   @column()
-  declare store_id: string  
+  declare detail_json: string
+
+  @column()
+  declare note: number
+
+  @column()
+  declare comments: number
+
+  @column()
+  declare store_id: string
 
   @column()
   declare collaborator_id: string
 
   @column()
-  declare engineer_id?: string  
-  
+  declare engineer_id?: string
+
   @column()
-  declare scene_dir?: string  
+  declare scene_dir?: string
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  declare created_at: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  declare updated_at: DateTime
 
   @beforeSave()
-  public static async setUUID (product: Product) {
-   if(!product.id)product.id = v4()
+  public static async setUUID(product: Product) {
+    if (!product.id) product.id = v4()
   }
 
-  public static clientProduct(product : Product , addon? : Record<string,any>){
-    const att  = product.$attributes||product;
-    ['images','model_images'].forEach(f => {
+  public static clientProduct(product: Product, addon?: Record<string, any>) {
+    const att = product.$attributes || product;
+    ['images', 'model_images'].forEach(f => {
       try {
-        if(typeof att[f] == 'string') att[f] = JSON.parse(att[f]||"[]");
+        if (typeof att[f] == 'string') att[f] = JSON.parse(att[f] || "[]");
         else att[f] = []
       } catch (error) {
         att[f] = []
       }
     });
-    return {
-      ...att,
-      ...addon
+    for (const key in addon) {
+      att[key] = addon[key]
     }
+    return att;
   }
 
 }

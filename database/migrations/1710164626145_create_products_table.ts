@@ -17,6 +17,9 @@ export default class extends BaseSchema {
       table.uuid('category_id').notNullable().references('id').inTable('categories').onDelete('CASCADE');
       table.integer('price'); // require if is_dynamic_price
       table.boolean('is_dynamic_price')
+      table.json('detail_json')
+      table.smallint('note')
+      table.integer('comments')
       table.uuid('store_id').notNullable().references('id').inTable('stores').onDelete('CASCADE');
       table.string('scene_dir')
       table.timestamp('created_at')
