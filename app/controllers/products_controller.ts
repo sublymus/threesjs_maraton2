@@ -342,7 +342,7 @@ export default class ProductsController {
             query.andWhere('visited_products.created_at', '<', before_date);
         }
 
-        const l = await limitation(query, page, limit, 'visited_products.created_at_desc')
+        const l = await limitation(query, page, limit||6, 'visited_products.created_at_desc')
         return {
             ...l.paging,
             list: (await l.query).map((p => Product.clientProduct(p)))

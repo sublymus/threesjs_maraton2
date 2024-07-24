@@ -30,22 +30,22 @@ export default class CommandsController {
         }
     }
 
-    async client_confirm_command ({  auth }: HttpContext){
+    async client_confirm_command({ auth }: HttpContext) {
         const user = await auth.authenticate();
-        const commands_ids = await db.from(Command.table).select('id').andWhere('user_id', user.id).andWhere('status',Command.CommandEnum.CART);
-        const commands = (await Command.findMany( commands_ids.map(c=>c.id)));
+        const commands_ids = await db.from(Command.table).select('id').andWhere('user_id', user.id).andWhere('status', Command.CommandEnum.CART);
+        const commands = (await Command.findMany(commands_ids.map(c => c.id)));
         for (const c of commands) {
             c.status = Command.CommandEnum.IN_DELIVERY;
             await c.save()
         }
         return {
-            success:true,
+            success: true,
         }
     }
     async update_command({ request, auth }: HttpContext) {
         const { command_id, quantity, status } = request.body();
         const user = await auth.authenticate()
-        
+
         const command = await Command.find(command_id);
         if (!command) throw new Error("Command Not Found");
         if (command.status == Command.CommandEnum.CART && user.id == command.user_id && quantity) {
@@ -72,13 +72,14 @@ export default class CommandsController {
 
     async get_commands({ request, auth }: HttpContext) {
         const { limit, page, status, no_status, user_id, store_id, product_id } = await paginate(request.qs() as any);
-        
+
         const user = await auth.authenticate();
         let query = db.from(Command.table)
             .where('commands.store_id', store_id)
             .leftJoin('products', 'products.id', 'commands.product_id')
             .select('commands.id')
             .select('commands.status')
+            .select('commands.collected_features')
             .select('commands.created_at')
             .select('commands.updated_at')
             .select('commands.quantity')
@@ -87,9 +88,10 @@ export default class CommandsController {
             .select('commands.user_id')
             .select('products.images')
             .select('products.title')
+            .select('products.description')
             .select('products.stock')
             .select('product_id')
-        if (user_id && (await UserStore.isStoreManagerOrMore(user.id,store_id))) {
+        if (user_id && (await UserStore.isStoreManagerOrMore(user.id, store_id))) {
             query = query.andWhere('user_id', user_id);
         } else {
             query = query.andWhere('user_id', user.id);
@@ -100,30 +102,41 @@ export default class CommandsController {
             query = query.andWhere('commands.status', '!=', no_status);
         }
 
-        if(product_id){
+        if (product_id) {
             query = query.andWhere('products.id', product_id);
         }
 
         const l = await limitation(query, page, limit, 'commands.created_at_desc');
-        
+
         return {
             ...l.paging,
-            list: (await l.query).map(m => Product.clientProduct(m))
+            list: (await l.query).map(m => {
+                const b = Product.clientProduct(m);
+                let c;
+                try {
+                    c = JSON.parse(m.collected_features || '{}')
+                } catch (error) { }
+                return {
+                    ...b,
+                    collected_features: c
+                }
+            })
+
         }
     }
-    async delete_command({ request, auth}: HttpContext) {
-        const {id:command_id} = request.params();
-        
-        const user= await auth.authenticate();
-        
-        const command = await Command.find(command_id);
-        if(!command) throw new Error("Command Not Found");
+    async delete_command({ request, auth }: HttpContext) {
+        const { id: command_id } = request.params();
 
-        if(user.id != command.user_id) throw new Error("Permision Required");
-        if(command.status != Command.CommandEnum.CART) throw new Error("Permision Require");
-        
+        const user = await auth.authenticate();
+
+        const command = await Command.find(command_id);
+        if (!command) throw new Error("Command Not Found");
+
+        if (user.id != command.user_id) throw new Error("Permision Required");
+        if (command.status != Command.CommandEnum.CART) throw new Error("Permision Require");
+
         await command.delete();
-        
-        return { deleted:true }
+
+        return { deleted: true }
     }
 }
