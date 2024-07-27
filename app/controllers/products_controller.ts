@@ -15,10 +15,12 @@ import User from '#models/user';
 import VisitedProduct from '#models/visited_product';
 import { DateTime } from 'luxon';
 import ProductComment from '#models/product_comment';
+import Command from '#models/command';
+import { DatabaseQueryBuilderContract } from '@adonisjs/lucid/types/querybuilder';
 
 export default class ProductsController {
     async create_product({ request, auth }: HttpContext) {
-        const {detail_json, title, description, features_id, price, stock, category_id, is_dynamic_price } = request.body();
+        const { detail_json, title, description, features_id, price, stock, category_id, is_dynamic_price } = request.body();
 
         const category = await Category.find(category_id);
         if (!category) throw new Error("Category not found");
@@ -179,23 +181,37 @@ export default class ProductsController {
 
     async get_products({ request, auth }: HttpContext) {                               // price_desc price_asc date_desc date_asc
 
-        let { page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required, all_status, store_id, product_id , by_product_category } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
-        
-        let query = db.query().from(Product.table).select('*');
+        let { add_cart, page, limit, category_id, catalog_id, price_min, price_max, text, order_by, stock_min, stock_max, is_features_required, all_status, store_id, product_id, by_product_category } = paginate(request.qs() as { page: number | undefined, limit: number | undefined } & { [k: string]: any });
+
+        let query = db.query();
 
         let user: User | undefined;
+        if (add_cart == 'true' || add_cart == true) {
+            user = await auth.authenticate();
+            if (user) {
+                query = query.from(Product.table).select('products.*').select(db.rawQuery(`
+                (select sum(quantity) from commands
+                 where products.id = commands.product_id  
+                 and user_id = :user_id and status = 'CART') as quantity
+                 `, {
+                    user_id: user.id
+                }))
+            }
+        } else {
+            query = query.from(Product.table).select('*');
+        }
         if (!store_id) {
             !user && (user = await auth.authenticate())
             if (!await UserStore.isSublymusManager(user.id)) throw new Error('Sublymus Permison Required')
         } else {
-            query = query.where('store_id', store_id);
+            query = query.where('products.store_id', store_id);
         }
         if (product_id) {
-            if(by_product_category){
+            if (by_product_category) {
                 const p = await Product.findOrFail(product_id);
                 query = query.andWhere('category_id', p.category_id);
-            }else{
-               
+            } else {
+                query = query.andWhere('id', product_id);
             }
         }
         if (all_status) {
@@ -218,31 +234,35 @@ export default class ProductsController {
                 query = query.andWhereLike('id', like.replaceAll('#', ''));
             } else {
                 query = query.andWhere((q) => {
-                    q.whereLike('title', like).orWhereLike('description', like).orWhereLike('detail_json',like);
+                    q.whereLike('title', like).orWhereLike('description', like).orWhereLike('detail_json', like);
                 });
             }
         }
         if (price_max || price_min) {
             query = query.andWhere((q) => {
-                q.whereBetween('price', [price_min || 0, price_max || Number.MAX_VALUE])
+                q.whereBetween('products.price', [price_min || 0, price_max || Number.MAX_VALUE])
             });
         }
         if (stock_max || stock_min) {
             query = query.andWhere((q) => {
                 q.whereBetween('stock', [stock_min || 0, stock_max || Number.MAX_VALUE]);
             });
-        } 
+        }
+
+
+
         const p = await limitation(query, page, limit, order_by)
         const products = await p.query;
 
         const starsPromise = products.map((product) => new Promise(async (rev) => {
             try {
-                product.note =  await ProductComment.calculProductNote(product.id)
+                product.note = await ProductComment.calculProductNote(product.id)
                 rev(null)
             } catch (error) {
                 console.log('is_features_required', error.message)
             }
         }))
+
 
         if (is_features_required) {
             const promises = products.map((product) => new Promise(async (rev) => {
@@ -254,10 +274,10 @@ export default class ProductsController {
                     console.log('is_features_required', error.message)
                 }
             }));
-            (await Promise.allSettled([Promise.allSettled(starsPromise),Promise.allSettled(promises)])).map(m => (m as any).value);
+            (await Promise.allSettled([Promise.allSettled(starsPromise), Promise.allSettled(promises)])).map(m => (m as any).value);
             return {
                 ...p.paging,
-                list: products ,
+                list: products,
             };
         }
         await Promise.allSettled(starsPromise)
@@ -300,7 +320,7 @@ export default class ProductsController {
             //         client_id:user.id
             //     }
             //   )
-            await VisitedProduct.query().where('product_id', product_id).andWhere('client_id', user.id).limit(1).update({ created_at: DateTime.now().toString()});
+            await VisitedProduct.query().where('product_id', product_id).andWhere('client_id', user.id).limit(1).update({ created_at: DateTime.now().toString() });
             return {
                 success: true
             }
@@ -316,7 +336,7 @@ export default class ProductsController {
 
     }
     async get_client_visited({ request, auth }: HttpContext) {
-        const { page, limit, client_id, after_date, before_date, product_id, store_id , from_dash} = request.qs();
+        const { page, limit, client_id, after_date, before_date, product_id, store_id, from_dash } = request.qs();
         const user = await auth.authenticate();
         let query = db.from(VisitedProduct.table)
             .select('products.*')
@@ -331,7 +351,7 @@ export default class ProductsController {
         if (await UserStore.isStoreManagerOrMore(user.id, store_id)) {
             if (client_id) query.andWhere('client_id', client_id)
             if (product_id) query.andWhere('product_id', product_id)
-            if(!from_dash) query.andWhere('client_id', user.id)
+            if (!from_dash) query.andWhere('client_id', user.id)
         } else {
             query.andWhere('client_id', user.id)
         }
@@ -342,7 +362,7 @@ export default class ProductsController {
             query.andWhere('visited_products.created_at', '<', before_date);
         }
 
-        const l = await limitation(query, page, limit||6, 'visited_products.created_at_desc')
+        const l = await limitation(query, page, limit || 6, 'visited_products.created_at_desc')
         return {
             ...l.paging,
             list: (await l.query).map((p => Product.clientProduct(p)))

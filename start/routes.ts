@@ -117,9 +117,8 @@ router.get('/get_messages', [MessagesController, 'get_messages'])
 router.put('/edit_message', [MessagesController, 'edit_message'])
 router.delete('/delete_message/:id', [MessagesController, 'delete_message'])
 //Command
-router.post('/create_command', [CommandsController, 'create_command'])
+router.post('/add_command', [CommandsController, 'add_command'])
 router.get('/get_commands', [CommandsController, 'get_commands'])
-router.put('/update_command', [CommandsController, 'update_command'])
 router.put('/client_confirm_command', [CommandsController, 'client_confirm_command'])
 router.delete('/delete_command/:id', [CommandsController, 'delete_command'])
 // Post

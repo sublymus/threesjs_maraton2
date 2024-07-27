@@ -7,34 +7,15 @@ import db from '@adonisjs/lucid/services/db';
 import UserStore from '#models/user_store';
 
 export default class CommandsController {
-    async create_command({ request, auth }: HttpContext) {
-        const { product_id, collected_features, quantity } = request.body();
-        const product = await Product.find(product_id);
-        if (!product) throw new Error("Product Note Found");
-        const user = await auth.authenticate();
-        const id = v4();
-        const command = await Command.create({
-            id,
-            product_id,
-            price: 10000,
-            status: Command.CommandEnum.CART,
-            quantity,
-            store_id: product.store_id,
-            user_id: user.id,
-            collected_features
-        });
-        // cree les collected featuure product, feature, component
-        return {
-            ...command.$attributes,
-            id
-        }
-    }
 
-    async client_confirm_command({ auth }: HttpContext) {
+    async client_confirm_command({request,auth }: HttpContext) {
+        const {list} = request.body()
         const user = await auth.authenticate();
-        const commands_ids = await db.from(Command.table).select('id').andWhere('user_id', user.id).andWhere('status', Command.CommandEnum.CART);
-        const commands = (await Command.findMany(commands_ids.map(c => c.id)));
+        // const commands_ids = await db.from(Command.table).select('id').andWhere('user_id', user.id).andWhere('status', Command.CommandEnum.CART);
+        const commands = (await Command.findMany(JSON.parse(list||'[]')));
         for (const c of commands) {
+            if(!c) continue;
+            if(user.id != c.user_id) continue
             c.status = Command.CommandEnum.IN_DELIVERY;
             await c.save()
         }
@@ -42,30 +23,52 @@ export default class CommandsController {
             success: true,
         }
     }
-    async update_command({ request, auth }: HttpContext) {
-        const { command_id, quantity, status } = request.body();
+    async add_command({ request, auth }: HttpContext) {
+        const { command_id, quantity, status, product_id, collected_features } = request.body();
         const user = await auth.authenticate()
+        let product:any;
+        let command = command_id ? await Command.find(command_id) : product_id ? (await Command.query().where('product_id', product_id).andWhere('user_id', user.id).limit(1))[0] : null;
+        if (!command) {
+            product = await Product.find(product_id);
+            if (!product) throw new Error("Product Note Found");
 
-        const command = await Command.find(command_id);
-        if (!command) throw new Error("Command Not Found");
-        if (command.status == Command.CommandEnum.CART && user.id == command.user_id && quantity) {
-            command.quantity = quantity;
-            // command.price = 10000;
-            await command.save();
-        }
-        if (await UserStore.isStoreManagerOrMore(user.id, command.store_id)) {
-            if (Object.keys(Command.CommandEnum).includes(status)) {
-                command.status = status;
-                await command.save();
+            const id = v4();
+            command = await Command.create({
+                id,
+                product_id,
+                price: 10000,
+                status: Command.CommandEnum.CART,
+                quantity:quantity??1,
+                store_id: product.store_id,
+                user_id: user.id,
+                collected_features:collected_features || JSON.stringify({})
+            });
+            return {
+                ...command.$attributes,
+                id
             }
         }
-        const product = await Product.find(command.product_id);
+        if (command.status == Command.CommandEnum.CART && user.id == command.user_id) {
+            command.quantity = quantity??0;
+            // command.price = 10000;
+        }
+        if(collected_features){
+            command.collected_features = collected_features
+        }
+        if (await UserStore.isStoreManagerOrMore(user.id, command.store_id)) {
+            if (status && Object.keys(Command.CommandEnum).includes(status)) {
+                command.status = status;
+            }
+        }
+        await command.save();
+        !product && (product = await Product.find(command.product_id));
         let p: any = {}
         if (product) p = Product.clientProduct(product);
         return {
             ...command.$attributes,
             images: p.images,
             title: p.title,
+            description: p.description,
             stock: p.stock
         }
     }
@@ -107,20 +110,23 @@ export default class CommandsController {
         }
 
         const l = await limitation(query, page, limit, 'commands.created_at_desc');
-
+        const ll = (await l.query).map(m => {
+            const b = Product.clientProduct(m);
+            b.quantity = parseInt(b.quantity+'')
+            let c;
+            try {
+                c = JSON.parse(m.collected_features || '{}')
+            } catch (error) { }
+            return {
+                ...b,
+                collected_features: c
+            }
+        })
+        // console.log(ll);
+        
         return {
             ...l.paging,
-            list: (await l.query).map(m => {
-                const b = Product.clientProduct(m);
-                let c;
-                try {
-                    c = JSON.parse(m.collected_features || '{}')
-                } catch (error) { }
-                return {
-                    ...b,
-                    collected_features: c
-                }
-            })
+            list: ll
 
         }
     }
