@@ -81,7 +81,7 @@ export default class Product extends BaseModel {
     ['images', 'model_images'].forEach(f => {
       try {
         if (typeof att[f] == 'string') att[f] = JSON.parse(att[f] || "[]");
-        else att[f] = []
+        else if(typeof att[f] == 'string' ) att[f] = []
       } catch (error) {
         att[f] = []
       }

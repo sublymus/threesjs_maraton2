@@ -21,6 +21,7 @@ import SubjectsController from '#controllers/subjects_controller';
 import UserBrowsersController from '#controllers/user_browsers_controller';
 import UserNotifContextsController from '#controllers/user_notif_contexts_controller';
 import ProductCommentsController from '#controllers/product_comments_controller';
+import FavoritesController from '#controllers/favorites_controller';
 
 //Auth
 router.get('/google_connexion', [AuthController, 'google_connexion']);
@@ -130,23 +131,27 @@ router.delete('/delete_post/:id', [PostsController, 'delete_post'])
 router.post('/create_subject', [SubjectsController, 'create_subject'])
 router.get('/get_subjects', [SubjectsController, 'get_subjects'])
 router.delete('/delete_subject/:id', [SubjectsController, 'delete_subject'])
-// UserBrowsersController
+// User Browsers
 router.get('/get_user_browsers', [UserBrowsersController, 'get_user_browsers'])
 router.put('/disable_notifications', [UserBrowsersController, 'disable_notifications'])
 router.put('/enable_notifications', [UserBrowsersController, 'enable_notifications'])
 router.put('/set_notification_data', [UserBrowsersController, 'set_notification_data'])
 router.delete('/remove_user_browser/:id', [UserBrowsersController, 'remove_user_browser'])
-// UserNotifContextsController
+// UserNotif Contexts
 router.post('/add_notif_context', [UserNotifContextsController, 'add_notif_context'])
 router.get('/get_notif_contexts', [UserNotifContextsController, 'get_notif_contexts'])
 router.delete('/remove_notif_context/:id', [UserNotifContextsController, 'remove_notif_context'])
-// ProductCommentsController
+// Product Comments
 router.post('/create_product_comment', [ProductCommentsController, 'create_product_comment'])
 router.get('/get_product_comments', [ProductCommentsController, 'get_product_comments'])
 router.get('/get_comment_index', [ProductCommentsController, 'get_comment_index'])
 router.put('/set_product_comment_response', [ProductCommentsController, 'set_product_comment_response'])
 router.put('/edit_product_comment_text', [ProductCommentsController, 'edit_product_comment_text'])
 router.delete('/delete_product_comment/:id', [ProductCommentsController, 'delete_product_comment'])
+// Favorites
+router.post('/add_favorite', [FavoritesController, 'add_favorite'])
+router.get('/get_favorites', [FavoritesController, 'get_favorites'])
+router.delete('/delete_favorite/:id', [FavoritesController, 'delete_favorite'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`, ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}` 

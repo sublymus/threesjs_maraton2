@@ -23,7 +23,7 @@ export default class StoresController {
         const existingStore = await Store.findBy('name', name);
 
         console.log(request.all());
-        
+
         if (existingStore) {
             return 'This Name is not Avalaible to use'
         }
@@ -82,11 +82,11 @@ export default class StoresController {
                 store_id: id,
                 type: USER_TYPE.OWNER
             })
-           try {
-            await populateStore({ ...store.$attributes, id } as Store, user);
-           } catch (error) {
-            
-           }
+            try {
+                await populateStore({ ...store.$attributes, id } as Store, user);
+            } catch (error) {
+
+            }
             return {
                 ...Store.ParseStore(store),
                 user_store,
@@ -153,7 +153,7 @@ export default class StoresController {
 
         if (owner_id) {
             query = query.where('owner_id', owner_id);
-        } 
+        }
         if (text) {
             const like = `%${(text as string).trim()}%`;
             if ((text as string).trim().startsWith('#')) {
@@ -183,7 +183,7 @@ export default class StoresController {
             const like = `%${(description as string).trim().split('').join('%')}%`;
             query = query.andWhereLike('stores.description', like);
         }
-        const stores = await limitation(query, page, limit, order_by||'created_at_desc')
+        const stores = await limitation(query, page, limit, order_by || 'created_at_desc')
         const l = ((await stores.query).map(s => Store.ParseStore(s)));
 
         return {
@@ -251,7 +251,7 @@ export default class StoresController {
 
     async get_store_by_name({ request }: HttpContext) {
         const s = await Store.findBy('name', request.param('name'));
-        if(!s) return null
+        if (!s) return null
         return Store.ParseStore(s)
     }
 
@@ -381,30 +381,41 @@ export default class StoresController {
     async can_use_store({ request, auth }: HttpContext) {
         const { att } = request.params();
 
-        const user = await auth.authenticate()
+
         const store = (await db.query().from(Store.table).select('*').where('id', att).orWhere('name', att).limit(1))[0] as Store | undefined;
-        if (!store) return 'Store not found';
-        let userStore = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', store.id).andWhere('type', USER_TYPE.CLIENT).limit(1))[0] as UserStore | undefined
+        if (!store) throw new Error('Store not found');
+        ;
+        try {
+            const user = await auth.authenticate()
+            let userStore = (await db.query().from(UserStore.table).select('*').where('user_id', user.id).andWhere('store_id', store.id).andWhere('type', USER_TYPE.CLIENT).limit(1))[0] as UserStore | undefined
 
-        if (!userStore) {
-            userStore = await UserStore.create({
-                user_id: user.id,
-                store_id: store.id,
-                type: USER_TYPE.CLIENT
-            })
+            if (!userStore) {
+                userStore = await UserStore.create({
+                    user_id: user.id,
+                    store_id: store.id,
+                    type: USER_TYPE.CLIENT
+                })
+            }
+            const manager = await UserStore.isStoreManagerOrMore(user.id, store.id)
+
+            return userStore && {
+                userStore: UserStore.parseUserStore(userStore),
+                manager: manager && UserStore.parseUserStore(manager),
+                user: {
+                    ...User.ParseUser(user),
+                    token: user.currentAccessToken.value,
+                },
+                store: Store.ParseStore(store)
+            }
+
+        } catch (error) {
+            // console.log(error);
+            
+            return {
+                store: Store.ParseStore(store)
+            }
         }
 
-        const manager = await UserStore.isStoreManagerOrMore(user.id, store.id)
-
-        return userStore && {
-            userStore: UserStore.parseUserStore(userStore),
-            manager: manager && UserStore.parseUserStore(manager),
-            user: {
-                ...User.ParseUser(user),
-                token: user.currentAccessToken.value,
-            },
-            store: Store.ParseStore(store)
-        }
     }
     async delete_store({ request, auth }: HttpContext) {
         try {
@@ -998,7 +1009,7 @@ async function populateStore(store: Store, user: User) {
     const discussion_id = v4();
     console.log({ store });
 
-    if(admin){
+    if (admin) {
         await Discussion.create({
             creator_id: admin.user_id,
             receiver_id: store.owner_id,
@@ -1006,12 +1017,12 @@ async function populateStore(store: Store, user: User) {
             to_id: store.id,
             id: discussion_id
         })
-    
+
         await Message.create({
             table_id: discussion_id,
             table_name: Discussion.table,
             text:
-            `
+                `
             Bonjour ${user.name},
     
             Je me permets de vous contacter suite à votre inscription à la démo de notre plateforme. Je suis [Votre nom], membre de l'équipe de [Nom de votre plateforme], et je tiens à vous souhaiter la bienvenue !
@@ -1032,8 +1043,8 @@ async function populateStore(store: Store, user: User) {
     `,
             user_id: admin.user_id,
         });
-        
-    }else{
-        console.log('@@@@@@@@@@@@@@@ PAs de admin userStore', admin );
+
+    } else {
+        console.log('@@@@@@@@@@@@@@@ PAs de admin userStore', admin);
     }
 }

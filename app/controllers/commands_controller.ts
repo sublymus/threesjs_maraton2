@@ -5,6 +5,7 @@ import { v4 } from 'uuid';
 import { limitation, paginate } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import UserStore from '#models/user_store';
+import Favorite from '#models/favorite';
 
 export default class CommandsController {
 
@@ -24,10 +25,11 @@ export default class CommandsController {
         }
     }
     async add_command({ request, auth }: HttpContext) {
-        const { command_id, quantity, status, product_id, collected_features } = request.body();
+        const { command_id, quantity, status, product_id, collected_features, store_id } = request.body();
         const user = await auth.authenticate()
         let product:any;
-        let command = command_id ? await Command.find(command_id) : product_id ? (await Command.query().where('product_id', product_id).andWhere('user_id', user.id).limit(1))[0] : null;
+        let command = command_id ? await Command.find(command_id) : product_id ? (await Command.query().where('product_id', product_id).andWhere('user_id', user.id).andWhere('status','CART').andWhere('store_id',store_id).limit(1))[0] : null;
+        
         if (!command) {
             product = await Product.find(product_id);
             if (!product) throw new Error("Product Note Found");
@@ -74,7 +76,7 @@ export default class CommandsController {
     }
 
     async get_commands({ request, auth }: HttpContext) {
-        const { limit, page, status, no_status, user_id, store_id, product_id } = await paginate(request.qs() as any);
+        const { limit, page, status, no_status, user_id, store_id, product_id, add_favorite} = await paginate(request.qs() as any);
 
         const user = await auth.authenticate();
         let query = db.from(Command.table)
@@ -91,6 +93,7 @@ export default class CommandsController {
             .select('commands.user_id')
             .select('products.images')
             .select('products.title')
+            .select('products.store_id')
             .select('products.description')
             .select('products.stock')
             .select('product_id')
@@ -110,7 +113,7 @@ export default class CommandsController {
         }
 
         const l = await limitation(query, page, limit, 'commands.created_at_desc');
-        const ll = (await l.query).map(m => {
+        const commands = (await l.query).map(m => {
             const b = Product.clientProduct(m);
             b.quantity = parseInt(b.quantity+'')
             let c;
@@ -122,11 +125,29 @@ export default class CommandsController {
                 collected_features: c
             }
         })
-        // console.log(ll);
+
+        let favoritePromise :Promise<any>[]|undefined = undefined
+        if (add_favorite && user) {
+            let u = user
+            favoritePromise = commands.map((command:any) => new Promise(async (rev) => {
+                try {
+                    
+                    command.favorite = (await db.from(Favorite.table)
+                        .andWhere('store_id', command.store_id)
+                        .andWhere('user_id', u.id)
+                        .andWhere('product_id', command.product_id).limit(1))[0]?.id;
+                    rev(null)
+                } catch (error) {
+                    console.log('add_favorite', error.message)
+                }
+            }))
+            await Promise.allSettled(favoritePromise);
+
+        }
         
         return {
             ...l.paging,
-            list: ll
+            list: commands
 
         }
     }

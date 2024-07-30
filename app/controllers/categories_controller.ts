@@ -97,7 +97,7 @@ export default class CategoriesController {
     async get_categories({ request, auth }: HttpContext) {
         let { page, limit, catalog_id, index, text, order_by, all_status, store_id } = paginate(request.qs() as { page: number | undefined, limit: number | undefined, catalog_id: string } & { [k: string]: any });
         let query = db.query().from(Category.table).select('categories.*').count('products.id', 'total_products').leftJoin('products', 'products.category_id', 'categories.id').groupBy('categories.id');
-        console.log({ page, limit, catalog_id, index, text, order_by, all_status, store_id } );
+        // console.log({ page, limit, catalog_id, index, text, order_by, all_status, store_id } );
         
         let user: User | undefined;
         if (!store_id) {
