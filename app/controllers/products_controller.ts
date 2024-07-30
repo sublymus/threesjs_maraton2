@@ -337,7 +337,7 @@ export default class ProductsController {
         if (!store_id) {
 
             !user && (user = await auth.authenticate())
-            if (!await UserStore.isSublymusManager(user.id)) throw new Error('Sublymus Permison Required')
+            if (!await UserStore.isSublymusManager(user.id)) return//throw new Error('Sublymus Permison Required')
         } else {
             query = query.where('products.store_id', store_id);
         }
