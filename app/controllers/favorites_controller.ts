@@ -100,7 +100,7 @@ export default class FavoritesController {
             let product:any;
             if(add_product ){
                 const p = await ProductsController._get_products({product_id:f.product_id, add_cart:true},auth);
-                if(p.list[0]){
+                if(p?.list[0]){
                     product = p.list[0]; 
                 }
             }

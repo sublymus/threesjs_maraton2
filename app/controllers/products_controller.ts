@@ -337,7 +337,26 @@ export default class ProductsController {
         if (!store_id) {
 
             !user && (user = await auth.authenticate())
-            if (!await UserStore.isSublymusManager(user.id)) return//throw new Error('Sublymus Permison Required')
+            if (!await UserStore.isSublymusManager(user.id)) return console.log({
+                add_cart,
+                page,
+                limit,
+                category_id,
+                catalog_id,
+                price_min,
+                price_max,
+                text,
+                order_by,
+                stock_min,
+                stock_max,
+                is_features_required,
+                all_status,
+                store_id,
+                product_id,
+                by_product_category,
+                add_favorite
+            });
+            //throw new Error('Sublymus Permison Required')
         } else {
             query = query.where('products.store_id', store_id);
         }
