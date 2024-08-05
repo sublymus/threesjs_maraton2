@@ -19,7 +19,7 @@ import Favorite from '#models/favorite';
 
 export default class ProductsController {
     async create_product({ request, auth }: HttpContext) {
-        const { detail_json, title, description, features_id, price, stock, category_id, is_dynamic_price } = request.body();
+        const { detail_json, title, description, features_id, price, stock, category_id } = request.body();
 
         const category = await Category.find(category_id);
         if (!category) throw new Error("Category not found");
@@ -318,7 +318,6 @@ export default class ProductsController {
 
         if (add_cart == 'true' || add_cart == true) {
             try {
-
                 if (user) {
                     query = query.select(db.rawQuery(`
                 (select sum(quantity) from commands

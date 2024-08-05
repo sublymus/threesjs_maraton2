@@ -53,7 +53,11 @@ export default class CommandsController {
             }
         }
         if (command.status == Command.CommandEnum.CART && user.id == command.user_id) {
-            command.quantity = quantity??0;
+            if(quantity){
+                command.quantity = quantity??0;
+            }else{
+                await command.delete();
+            }
             // command.price = 10000;
         }
         if(collected_features){

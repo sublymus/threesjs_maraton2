@@ -24,9 +24,7 @@ export async function limitation(query: DatabaseQueryBuilderContract<any>, page:
     page = page < 1 ? 1 : page
     
     let pages = Math.max(Math.ceil(total / limit), 1);
-    console.log('ae', {total ,limit, page , pages});
     page = pages < page ? pages : page;
-    console.log((page - 1) , limit);
     
     query = query.limit(limit).offset((page - 1) * limit);
 
