@@ -209,7 +209,7 @@ export default class FeaturesController {
             
         for (const comp of newComps) {
             const last = lasComps.find((f) => f.id == comp.id);
-            console.log({last:last?.$attributes,comp});
+            // console.log({last:last?.$attributes,comp});
             
             if (last) {
                 try {

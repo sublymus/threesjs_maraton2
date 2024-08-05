@@ -48,13 +48,13 @@ export async function updateFiles({
     if (!Array.isArray(_newPseudoUrls)) _newPseudoUrls = [];
   } catch (error) {}
 
-  const pointer = column_name + "_";
+  const pointer = (distinct?(distinct+':'):'')+column_name + "_";
   let fileLength = 0;
 
   const promisesAdd = _newPseudoUrls.map((pseudoUrl, i) => {
     try {
       if (pseudoUrl.startsWith(pointer)) {
-        const file = request.file((distinct?(distinct+':'):'')+pseudoUrl);
+        const file = request.file(pseudoUrl);
         if (!file) return Promise.reject(null);
         if (extname && !extname.includes(file.extname || "")) {
           if (throwError)

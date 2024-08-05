@@ -33,8 +33,6 @@ export async function createFiles({
   const { extname, max, maxSize, min, throwError, compress } = options || {};
   while (true) {
     const file = request.file(`${distinct?distinct+':':''}${column_name}_${count++}`);
-    console.log('#######################', file,column_name);
-    
     if (!file) {
       break;
     }
