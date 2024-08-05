@@ -8,10 +8,10 @@ export default class Feature extends BaseModel {
   declare id: string
 
   @column()
-  declare collect_type: string
+  declare name: string
 
   @column()
-  declare name: string
+  declare view: string
 
   @column()
   declare required: boolean
@@ -20,31 +20,13 @@ export default class Feature extends BaseModel {
   declare placeholder: string
 
   @column()
-  declare default_value: string
-
-  @column()
   declare icon: string
 
   @column()
-  declare lowercase: string
-
-  @column()
-  declare uppercase: string
-
-  @column()
-  declare capitalize: string
-
-  @column()
-  declare trim: string //toujour true
+  declare case: string
 
   @column()
   declare match: string
-
-  @column()
-  declare min_length: number
-
-  @column()
-  declare max_length: number
 
   @column()
   declare min: string
@@ -53,19 +35,16 @@ export default class Feature extends BaseModel {
   declare max: string
 
   @column()
-  declare max_size: string
+  declare product_id: string
 
-  @column()
-  declare mime: string
+  // @column()
+  // declare max_size: string
 
-  @column()
-  declare enum: string
+  // @column()
+  // declare mime: string
 
-  @column()
-  declare ext: string // unuse
-
-  @column()
-  declare store_id: string
+  // @column()
+  // declare ext: string // unuse
 
   @column.dateTime({ autoCreate: true })
   declare created_at: DateTime

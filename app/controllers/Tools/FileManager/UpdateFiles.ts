@@ -19,6 +19,7 @@ export async function updateFiles({
   table_name,
   column_name,
   options,
+  distinct,
   lastUrls,
   newPseudoUrls,
 }: {
@@ -27,6 +28,7 @@ export async function updateFiles({
   request: HttpContext["request"];
   table_id: string;
   table_name: string;
+  distinct?:string,
   column_name: string;
   options?: OptionsType;
 }): Promise<string[]> {
@@ -42,7 +44,6 @@ export async function updateFiles({
     console.log({ newPseudoUrls });
     if (newPseudoUrls) {
       _newPseudoUrls = JSON.parse(newPseudoUrls);
-      console.log({ _newPseudoUrls });
     }
     if (!Array.isArray(_newPseudoUrls)) _newPseudoUrls = [];
   } catch (error) {}
@@ -51,21 +52,15 @@ export async function updateFiles({
   let fileLength = 0;
 
   const promisesAdd = _newPseudoUrls.map((pseudoUrl, i) => {
-    console.log({ pseudoUrl });
-
     try {
       if (pseudoUrl.startsWith(pointer)) {
-        const file = request.file(pseudoUrl);
+        const file = request.file((distinct?(distinct+':'):'')+pseudoUrl);
         if (!file) return Promise.reject(null);
-        console.log('file',file);
-        console.log('extname',extname && !extname.includes(file.extname || ""));
-        
         if (extname && !extname.includes(file.extname || "")) {
           if (throwError)
             throw new Error("File bad Extension : " + file?.extname);
           else return Promise.reject(null);
         }
-        console.log();
         
         if (maxSize && file.size > maxSize) {
           if (throwError)
@@ -78,7 +73,6 @@ export async function updateFiles({
       } else {
         const filePath = `${env.get("FILE_STORAGE_PATH")}${pseudoUrl.replace(env.get("FILE_STORAGE_URL"),'')}`;
         const fileUrl = `${pseudoUrl}`;
-        console.log({filePath, fileUrl});
         
         if (fs.existsSync(filePath)) {
           fileLength++;
@@ -108,7 +102,6 @@ export async function updateFiles({
     if (!newUrls.includes(lastUrl)) {
       if(!lastUrl.includes(table_id)) return
       const filePath = `.${lastUrl}`;
-      console.log({filePath});
       
       if (fs.existsSync(filePath)) {
         fs.unlink(filePath, function (err) {

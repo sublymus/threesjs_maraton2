@@ -22,8 +22,12 @@ export async function limitation(query: DatabaseQueryBuilderContract<any>, page:
     limit = limit > 50 ? 50 : limit < 1 ? 1 : limit
     page = page || 1
     page = page < 1 ? 1 : page
+    
     let pages = Math.max(Math.ceil(total / limit), 1);
+    console.log('ae', {total ,limit, page , pages});
     page = pages < page ? pages : page;
+    console.log((page - 1) , limit);
+    
     query = query.limit(limit).offset((page - 1) * limit);
 
     order_by = order_by?.toLowerCase();

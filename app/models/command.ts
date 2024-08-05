@@ -3,11 +3,11 @@ import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
 import { v4 } from 'uuid'
 
 enum CommandEnum {
-  DELIVERY='DELIVERY', PAUSE='PAUSE', CANCEL='CANCEL', IN_DELIVERY='IN_DELIVERY',CART='CART'
+  DELIVERY = 'DELIVERY', PAUSE = 'PAUSE', CANCEL = 'CANCEL', IN_DELIVERY = 'IN_DELIVERY', CART = 'CART'
 }
 
 export default class Command extends BaseModel {
-  
+
   public static CommandEnum = CommandEnum
 
   @column({ isPrimary: true })
@@ -29,10 +29,10 @@ export default class Command extends BaseModel {
   declare price: number
 
   @column()
-  declare payment_id: string 
-  
+  declare payment_id: string
+
   @column()
-  declare delivery_address : string
+  declare delivery_address: string
 
   @column()
   declare store_id: string
@@ -47,8 +47,18 @@ export default class Command extends BaseModel {
   declare updated_at: DateTime
 
   @beforeSave()
-  public static async setUUID (command: Command) {
-   if(!command.id)command.id = v4()
+  public static async setUUID(command: Command) {
+    if (!command.id) command.id = v4()
   }
 
+  public static parseCommand(a: Command) {
+    let j = {}, b = a.$attributes || a;
+    try {
+      b.collected_features = {}
+      j = JSON.parse((b).collected_features)
+      b.collected_features = j;
+    } catch (error) { 
+    }
+    return { ...b, collected_features: j }
+  }
 }

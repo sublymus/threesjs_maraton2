@@ -42,9 +42,6 @@ export default class Product extends BaseModel {
   declare price: number
 
   @column()
-  declare is_dynamic_price: number
-
-  @column()
   declare detail_json: string
 
   @column()
@@ -65,6 +62,9 @@ export default class Product extends BaseModel {
   @column()
   declare scene_dir?: string
 
+  @column()
+  declare star : number
+  
   @column.dateTime({ autoCreate: true })
   declare created_at: DateTime
 
@@ -89,6 +89,7 @@ export default class Product extends BaseModel {
     for (const key in addon) {
       att[key] = addon[key]
     }
+    att.star = Number(att.star||'0')
     return att;
   }
 

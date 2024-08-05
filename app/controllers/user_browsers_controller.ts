@@ -68,6 +68,7 @@ export default class UserBrowsersController {
     const user = await auth.authenticate();
     
     const user_browser = await setBrowser(user, request);
+    if(!user_browser) return;
     user_browser.token = request.headers().authorization?.split(' ')[1] || '';
     user_browser.notification_data = notification_data
     await user_browser.save();

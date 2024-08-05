@@ -45,8 +45,10 @@ export default class CommandsController {
                 user_id: user.id,
                 collected_features:collected_features || JSON.stringify({})
             });
+            console.log(command , collected_features);
+            
             return {
-                ...command.$attributes,
+                ...Command.parseCommand(command),
                 id
             }
         }
@@ -67,7 +69,7 @@ export default class CommandsController {
         let p: any = {}
         if (product) p = Product.clientProduct(product);
         return {
-            ...command.$attributes,
+            ...Command.parseCommand(command),
             images: p.images,
             title: p.title,
             description: p.description,
@@ -120,6 +122,11 @@ export default class CommandsController {
             try {
                 c = JSON.parse(m.collected_features || '{}')
             } catch (error) { }
+            console.log( {
+                ...b,
+                collected_features: c
+            });
+            
             return {
                 ...b,
                 collected_features: c

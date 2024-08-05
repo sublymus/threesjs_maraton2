@@ -16,19 +16,19 @@ export default class Component extends BaseModel {
   declare images: string;
 
   @column()
-  declare icon: string;
+  declare price: number;
 
   @column()
   declare scene: string;
 
   @column()
-  declare code: string;
+  declare scene_code: string;
 
   @column()
-  declare key: string;
+  declare is_default: boolean;
 
   @column()
-  declare store_id: string
+  declare feature_id: string
 
   @column.dateTime({ autoCreate: true })
   declare created_at: DateTime
@@ -37,13 +37,14 @@ export default class Component extends BaseModel {
   declare updated_at: DateTime
 
   @beforeSave()
-  public static async setUUID(f_value: Component) {
-    if (!f_value.id) f_value.id = v4()
+  public static async setUUID(c: Component) {
+    if (!c.id) c.id = v4()
   }
 
   public static parseComponent(a: Component) {
     let j = [], b = a.$attributes || a;
-    try { j = JSON.parse((b).icon) } catch (error) { }
-    return { ...b, icon: j }
+    try { j = JSON.parse((b).images) } catch (error) { console.log(error);
+     }
+    return { ...b, images: j }
   }
 }

@@ -15,6 +15,7 @@ type OptionsType = {
 export async function createFiles({
   request,
   table_id,
+  distinct,
   table_name,
   column_name,
   options,
@@ -22,6 +23,7 @@ export async function createFiles({
   request: HttpContext["request"];
   table_id: string;
   table_name: string;
+  distinct?:string,
   column_name: string;
   options?: OptionsType;
 }): Promise<string[]> {
@@ -30,7 +32,7 @@ export async function createFiles({
   const filesList: FileType[] = [];
   const { extname, max, maxSize, min, throwError, compress } = options || {};
   while (true) {
-    const file = request.file(`${column_name}_${count++}`);
+    const file = request.file(`${distinct?distinct+':':''}${column_name}_${count++}`);
     console.log('#######################', file,column_name);
     
     if (!file) {
@@ -43,7 +45,7 @@ export async function createFiles({
     else return [];
   }
   if (max && filesList.length > max) {
-    if (throwError) throw new Error("number of Files must be <= " + min);
+    if (throwError) throw new Error("number of Files must be <= " + max);
     else return [];
   }
 

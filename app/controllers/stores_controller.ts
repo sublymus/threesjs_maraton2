@@ -164,7 +164,8 @@ export default class StoresController {
                         .orWhereLike('users.name', like)
                         .orWhereLike('users.email', like)
                         .orWhereLike('stores.store_email', like);
-                });
+                });            // max_size,
+
             }
         }
         if (phone) {
@@ -465,12 +466,11 @@ export default class StoresController {
         const products = (await db.from(Product.table).where('store_id', store_id).count('id as count'))[0]?.count;
         const catalogs = (await db.from(Catalog.table).where('store_id', store_id).count('id as count'))[0]?.count;
         const categories = (await db.from(Category.table).where('store_id', store_id).count('id as count'))[0]?.count;
-        const features = (await db.from(Feature.table).where('store_id', store_id).count('id as count'))[0]?.count;
         return {
             products,
             categories,
             catalogs,
-            features
+            features:0
         }
     }
     async check_store({ request }: HttpContext) {
@@ -656,7 +656,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category1_1_id,
         price: 1243,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_65b6e94b-b61b-4deb-aa70-dd4485d9b67f/Ring_1",
     })
@@ -676,7 +675,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category1_1_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -696,7 +694,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category1_1_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -717,7 +714,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category2_1_id,
         price: 1243,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_65b6e94b-b61b-4deb-aa70-dd4485d9b67f/Ring_1",
     })
@@ -737,7 +733,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category2_1_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -757,7 +752,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category2_1_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -778,7 +772,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category3_1_id,
         price: 1243,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_65b6e94b-b61b-4deb-aa70-dd4485d9b67f/Ring_1",
     })
@@ -798,7 +791,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category3_1_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -818,7 +810,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category3_1_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -839,7 +830,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category1_2_id,
         price: 1243,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -859,7 +849,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category1_2_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -879,7 +868,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category1_2_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -900,7 +888,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category2_2_id,
         price: 1243,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -920,7 +907,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category2_2_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -940,7 +926,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category2_2_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -961,7 +946,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category3_2_id,
         price: 1243,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -981,7 +965,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category3_2_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })
@@ -1001,7 +984,6 @@ async function populateStore(store: Store, user: User) {
         keywords: "noga",
         category_id: category3_2_id,
         price: 356,
-        is_dynamic_price: 0,
         store_id: store.id,
         scene_dir: "/fs/products_scene_dir_05e7dc8e-f409-46ae-91cc-6a125add8c5b/Ring_1",
     })

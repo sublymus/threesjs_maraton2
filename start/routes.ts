@@ -5,7 +5,6 @@ import env from './env.js';
 import CatalogsController from '#controllers/catalogs_controller';
 import CategoriesController from '#controllers/categories_controller';
 import FeaturesController from '#controllers/features_controller';
-import ComponentController from '#controllers/components_controller';
 import StoresController from '#controllers/stores_controller';
 import RolesController from '#controllers/roles_controller';
 import DiscussionController from '#controllers/discussions_controller';
@@ -13,6 +12,7 @@ import MessagesController from '#controllers/messages_controller';
 import SessionController from '#controllers/session_controller';
 import CommandsController from '#controllers/commands_controller';
 import User, { AdminEmails, USER_STATUS, USER_TYPE } from '#models/user';
+
 import { v4 } from 'uuid';
 import UserStore from '#models/user_store';
 import webpush from "web-push";
@@ -61,20 +61,6 @@ router.post('/create_feature', [FeaturesController, 'create_feature']);
 router.get('/get_features', [FeaturesController, 'get_features']);
 router.put('/update_feature', [FeaturesController, 'update_feature']);
 router.delete('/delete_feature/:id', [FeaturesController, 'delete_feature']);
-router.post('/add_features_to_product', [FeaturesController, 'add_feature_to_product']);
-router.delete('/remove_features_to_product', [FeaturesController, 'remove_features_to_product']);
-router.get('/get_features_of_product', [FeaturesController, 'get_features_of_product']);
-router.get('/get_products_of_feature', [FeaturesController, 'get_products_of_feature']);
-//Component
-router.post('/create_component', [ComponentController, 'create_component']);
-router.get('/get_components', [ComponentController, 'get_components']);
-router.put('/update_component', [ComponentController, 'update_component']);
-router.delete('/delete_component/:id', [ComponentController, 'delete_component']);
-//get_product_feature_components
-router.post('/set_product_feature_component', [ComponentController, 'set_product_feature_component']);
-router.get('get_product_feature_components', [ComponentController, 'get_product_feature_components'])
-router.put('/update_product_feature_component', [ComponentController, 'update_product_feature_component']);
-router.delete('/detete_product_feature_component/:id', [ComponentController, 'detete_product_feature_component']);
 //Store
 router.post('/create_store', [StoresController, 'create_store']);
 router.post('/add_collaborator', [StoresController, 'add_collaborator'])

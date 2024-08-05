@@ -1,6 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
-import { v4 } from 'uuid'
+import { BaseModel, column } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
 
 export default class ProductComment extends BaseModel {
@@ -39,6 +38,8 @@ export default class ProductComment extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updated_at: DateTime
+
+
 
   public static async calculProductNote(product_id: string) {
     const res = (await db.query().from(ProductComment.table).where('product_id', product_id).sum('note', 'note').count('id', 'votes'))[0];

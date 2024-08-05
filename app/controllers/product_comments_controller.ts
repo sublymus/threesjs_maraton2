@@ -49,12 +49,6 @@ export default class ProductCommentsController {
             },
         });
 
-        console.log({
-            videos,
-            photos
-        });
-
-
         const newComment = await ProductComment.create({
             note,
             photos: JSON.stringify(photos),
@@ -65,8 +59,13 @@ export default class ProductCommentsController {
             videos: JSON.stringify(videos),
             videos_count: videos.length || 0,
             text
-        })
+        });
 
+        const pNote = await ProductComment.calculProductNote(product.id);
+        
+        product.star = pNote.star
+        product.save();
+        
         return ProductComment.parseComment(newComment)
 
     }
@@ -236,8 +235,7 @@ export default class ProductCommentsController {
                     videos: (a.videos || 0),
                 },
             }
-            console.log(parsedComments[0].id, d);
-
+          
         }
         return {
             ...l.paging,

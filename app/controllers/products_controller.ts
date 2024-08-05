@@ -5,7 +5,7 @@ import { createFiles } from './Tools/FileManager/CreateFiles.js';
 import { updateFiles } from './Tools/FileManager/UpdateFiles.js';
 import { unZipDir } from './Tools/ZipManager/unZipDir.js';
 import { deleteFiles } from './Tools/FileManager/DeleteFiles.js';
-import { limitation, paginate } from './Tools/Utils.js';
+import { limitation } from './Tools/Utils.js';
 import db from '@adonisjs/lucid/services/db';
 import PivotProductsFeature from '#models/pivot_products_feature';
 import FeaturesController from './features_controller.js';
@@ -77,17 +77,15 @@ export default class ProductsController {
                 images: JSON.stringify(imagesUrl),
                 model_images: JSON.stringify(modelImagesUrl),
                 status: Product.STATUS.PAUSE,
-                is_dynamic_price,
                 stock,
                 category_id,
                 price,
-                collaborator_id: v4(),
                 store_id: category.store_id,
                 keywords: 'noga',
                 detail_json
             })
             product.id = product_id;
-            const features = await FeaturesController._get_features_of_product({ product_id });
+            const features = await FeaturesController._get_features({ product_id });
             return Product.clientProduct(product, { features });
         } catch (error) {
             console.log(error);
@@ -386,7 +384,15 @@ export default class ProductsController {
 
 
 
-        const p = await limitation(query, page, limit, order_by)
+        const p = await limitation(
+            query,
+            page,
+            limit,
+            order_by?.startsWith('popular') ?
+                order_by?.replace('popular', 'star') :
+                order_by
+        )
+
         const products = (await p.query).map(p => Product.clientProduct(p));
 
         let starsPromise = products.map((product) => new Promise(async (rev) => {
@@ -416,7 +422,7 @@ export default class ProductsController {
         if (is_features_required) {
             const promises = products.map((product) => new Promise(async (rev) => {
                 try {
-                    const features = await FeaturesController._get_features_of_product({ product_id: product.id });
+                    const features = await FeaturesController._get_features({ product_id: product.id });
                     Product.clientProduct(product as any, { features })
                     rev(null)
                 } catch (error) {
