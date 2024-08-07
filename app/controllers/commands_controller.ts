@@ -41,7 +41,7 @@ export default class CommandsController {
                 price: 10000,
                 status: Command.CommandEnum.CART,
                 quantity:quantity??1,
-                store_id: product.store_id,
+                store_id: product.store_id, 
                 user_id: user.id,
                 collected_features:collected_features || JSON.stringify({})
             });
