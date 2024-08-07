@@ -45,7 +45,6 @@ export default class CommandsController {
                 user_id: user.id,
                 collected_features:collected_features || JSON.stringify({})
             });
-            console.log(command , collected_features);
             
             return {
                 ...Command.parseCommand(command),
@@ -53,10 +52,16 @@ export default class CommandsController {
             }
         }
         if (command.status == Command.CommandEnum.CART && user.id == command.user_id) {
-            if(quantity){
-                command.quantity = quantity??0;
-            }else{
+            if(quantity != undefined && parseInt(quantity+'')== 0){
+                try {
+                    console.log('___________________________________________');
+                    
                 await command.delete();
+                } catch (error) {
+                    await db.rawQuery('delete from commands where id = :id',{id:command.id})
+                }
+            }else{
+                command.quantity = quantity??0;
             }
             // command.price = 10000;
         }
