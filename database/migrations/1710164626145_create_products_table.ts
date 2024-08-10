@@ -15,7 +15,6 @@ export default class extends BaseSchema {
       table.string('keywords').notNullable() //TODO
       table.uuid('category_id').notNullable().references('id').inTable('categories').onDelete('CASCADE');
       table.integer('price'); // require if is_dynamic_price
-      table.json('detail_json')
       table.smallint('star')
       table.string('meta_data') // json payement info
       table.integer('comments')

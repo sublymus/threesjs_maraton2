@@ -22,6 +22,7 @@ import UserBrowsersController from '#controllers/user_browsers_controller';
 import UserNotifContextsController from '#controllers/user_notif_contexts_controller';
 import ProductCommentsController from '#controllers/product_comments_controller';
 import FavoritesController from '#controllers/favorites_controller';
+import DetailProductsController from '#controllers/detail_products_controller';
 
 //Auth
 router.get('/google_connexion', [AuthController, 'google_connexion']);
@@ -138,6 +139,10 @@ router.delete('/delete_product_comment/:id', [ProductCommentsController, 'delete
 router.post('/add_favorite', [FavoritesController, 'add_favorite'])
 router.get('/get_favorites', [FavoritesController, 'get_favorites'])
 router.delete('/delete_favorite/:id', [FavoritesController, 'delete_favorite'])
+// Deatils
+router.post('/create_detail', [DetailProductsController, 'create_detail'])
+router.get('/get_details', [DetailProductsController, 'get_details'])
+router.delete('/delete_detail/:id', [DetailProductsController, 'delete_detail'])
 
 router.get(`${env.get("FILE_STORAGE_URL")}/*`, ({ params, response }) => {
     const fileName = `/${(params['*'] as string[]).join('/')}` 

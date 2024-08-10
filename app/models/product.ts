@@ -80,6 +80,7 @@ export default class Product extends BaseModel {
     const att = product.$attributes || product;
     ['images', 'model_images'].forEach(f => {
       try {
+        // att[f]  == 'json[]' | []
         if (typeof att[f] == 'string') att[f] = JSON.parse(att[f] || "[]");
         else if(typeof att[f] == 'string' ) att[f] = []
       } catch (error) {

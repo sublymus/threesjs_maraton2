@@ -50,30 +50,32 @@ export default class CommandsController {
                 ...Command.parseCommand(command),
                 id
             }
-        }
-        if (command.status == Command.CommandEnum.CART && user.id == command.user_id) {
-            if(quantity != undefined && parseInt(quantity+'')== 0){
-                try {
-                    console.log('___________________________________________');
-                    
-                await command.delete();
-                } catch (error) {
-                    await db.rawQuery('delete from commands where id = :id',{id:command.id})
+        }else{
+            if (command.status == Command.CommandEnum.CART && user.id == command.user_id) {
+                if(quantity != undefined && parseInt(quantity+'')== 0){
+                    try {
+                        console.log('___________________________________________');
+                        
+                    await command.delete();
+                    } catch (error) {
+                        await db.rawQuery('delete from commands where id = :id',{id:command.id})
+                    }
+                }else{
+                    quantity && (command.quantity = quantity??0);
                 }
-            }else{
-                command.quantity = quantity??0;
+                // command.price = 10000;
             }
-            // command.price = 10000;
-        }
-        if(collected_features){
-            command.collected_features = collected_features
-        }
-        if (await UserStore.isStoreManagerOrMore(user.id, command.store_id)) {
-            if (status && Object.keys(Command.CommandEnum).includes(status)) {
-                command.status = status;
+            if(collected_features){
+                command.collected_features = collected_features
             }
+            if (await UserStore.isStoreManagerOrMore(user.id, command.store_id)) {
+                if (status && Object.keys(Command.CommandEnum).includes(status)) {
+                    command.status = status;
+                }
+            }
+            await command.save();
         }
-        await command.save();
+        
         !product && (product = await Product.find(command.product_id));
         let p: any = {}
         if (product) p = Product.clientProduct(product);
@@ -131,11 +133,6 @@ export default class CommandsController {
             try {
                 c = JSON.parse(m.collected_features || '{}')
             } catch (error) { }
-            console.log( {
-                ...b,
-                collected_features: c
-            });
-            
             return {
                 ...b,
                 collected_features: c

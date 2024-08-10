@@ -54,11 +54,13 @@ export default class Command extends BaseModel {
   public static parseCommand(a: Command) {
     let j = {}, b = a.$attributes || a;
     try {
-      b.collected_features = {}
-      j = JSON.parse((b).collected_features)
+      j = JSON.parse(b.collected_features)
       b.collected_features = j;
-    } catch (error) { 
+    } catch (error) {
+      b.collected_features = {}
+      console.log(error);      
     }
+
     return { ...b, collected_features: j }
   }
 }

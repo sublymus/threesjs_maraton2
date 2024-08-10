@@ -429,13 +429,15 @@ export default class ProductsController {
                 }
             }));
             (await Promise.allSettled([Promise.allSettled(starsPromise), Promise.allSettled(promises), Promise.allSettled(favoritePromise)])).map(m => (m as any).value);
+            // console.log(products);
             return {
                 ...p.paging,
                 list: products,
             };
         }
         await Promise.allSettled([Promise.allSettled(starsPromise), Promise.allSettled(favoritePromise)])
-
+        // console.log(products);
+        
         return {
             ...p.paging,
             list: products
